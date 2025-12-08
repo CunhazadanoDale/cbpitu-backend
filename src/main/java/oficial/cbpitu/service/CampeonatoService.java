@@ -1,6 +1,9 @@
 package oficial.cbpitu.service;
 
 import lombok.RequiredArgsConstructor;
+import oficial.cbpitu.exception.OperacaoInvalidaException;
+import oficial.cbpitu.exception.RecursoNaoEncontradoException;
+import oficial.cbpitu.exception.RegraNegocioException;
 import oficial.cbpitu.model.*;
 import oficial.cbpitu.model.enums.FormatoCompeticao;
 import oficial.cbpitu.model.enums.StatusCampeonato;
@@ -29,7 +32,7 @@ public class CampeonatoService {
     private final SistemaSuicoStrategy sistemaSuicoStrategy;
     private final LoserBracketStrategy loserBracketStrategy;
 
-    // ==================== CRUD Campeonato ====================
+    // CRUD Campeonato
 
     public List<Campeonato> listarTodos() {
         return campeonatoRepository.findAll();
@@ -51,24 +54,24 @@ public class CampeonatoService {
 
     @Transactional
     public Campeonato atualizar(Long id, Campeonato dados) {
-        return campeonatoRepository.findById(id)
-                .map(c -> {
-                    c.setNome(dados.getNome());
-                    c.setDescricao(dados.getDescricao());
-                    c.setDataInicio(dados.getDataInicio());
-                    c.setDataFim(dados.getDataFim());
-                    c.setLimiteMaximoTimes(dados.getLimiteMaximoTimes());
-                    return campeonatoRepository.save(c);
-                })
-                .orElseThrow(() -> new RuntimeException("Campeonato não encontrado: " + id));
+        Campeonato campeonato = buscarOuFalhar(id);
+
+        campeonato.setNome(dados.getNome());
+        campeonato.setDescricao(dados.getDescricao());
+        campeonato.setDataInicio(dados.getDataInicio());
+        campeonato.setDataFim(dados.getDataFim());
+        campeonato.setLimiteMaximoTimes(dados.getLimiteMaximoTimes());
+
+        return campeonatoRepository.save(campeonato);
     }
 
     @Transactional
     public void deletar(Long id) {
-        campeonatoRepository.deleteById(id);
+        Campeonato campeonato = buscarOuFalhar(id);
+        campeonatoRepository.delete(campeonato);
     }
 
-    // ==================== Inscrição de Times ====================
+    // Inscrição de Times
 
     @Transactional
     public Campeonato abrirInscricoes(Long campeonatoId) {
@@ -88,10 +91,14 @@ public class CampeonatoService {
     public Campeonato inscreverTime(Long campeonatoId, Long timeId) {
         Campeonato campeonato = buscarOuFalhar(campeonatoId);
         Time time = timeRepository.findById(timeId)
-                .orElseThrow(() -> new RuntimeException("Time não encontrado: " + timeId));
+                .orElseThrow(() -> new RecursoNaoEncontradoException("Time", timeId));
 
         if (!campeonato.podeInscreverTime()) {
-            throw new RuntimeException("Inscrições não estão abertas ou limite atingido.");
+            throw new OperacaoInvalidaException("Inscrições não estão abertas ou limite de times atingido");
+        }
+
+        if (campeonato.getTimesParticipantes().contains(time)) {
+            throw new RegraNegocioException("Time já está inscrito neste campeonato");
         }
 
         campeonato.adicionarTime(time);
@@ -102,13 +109,17 @@ public class CampeonatoService {
     public Campeonato removerTime(Long campeonatoId, Long timeId) {
         Campeonato campeonato = buscarOuFalhar(campeonatoId);
         Time time = timeRepository.findById(timeId)
-                .orElseThrow(() -> new RuntimeException("Time não encontrado: " + timeId));
+                .orElseThrow(() -> new RecursoNaoEncontradoException("Time", timeId));
+
+        if (!campeonato.getTimesParticipantes().contains(time)) {
+            throw new RegraNegocioException("Time não está inscrito neste campeonato");
+        }
 
         campeonato.removerTime(time);
         return campeonatoRepository.save(campeonato);
     }
 
-    // ==================== Gerenciamento de Fases ====================
+    // Gerenciamento de Fases
 
     @Transactional
     public Fase adicionarFase(Long campeonatoId, String nome, FormatoCompeticao formato,
@@ -137,14 +148,18 @@ public class CampeonatoService {
         return strategy.getMensagemValidacao(numTimes);
     }
 
-    // ==================== Iniciar Campeonato ====================
+    // Iniciar Campeonato
 
     @Transactional
     public Campeonato iniciarCampeonato(Long campeonatoId) {
         Campeonato campeonato = buscarOuFalhar(campeonatoId);
 
         if (campeonato.getFases().isEmpty()) {
-            throw new RuntimeException("Campeonato precisa ter pelo menos uma fase configurada.");
+            throw new RegraNegocioException("Campeonato precisa ter pelo menos uma fase configurada");
+        }
+
+        if (campeonato.getNumeroTimesInscritos() < 2) {
+            throw new RegraNegocioException("Campeonato precisa ter pelo menos 2 times inscritos");
         }
 
         // Gera confrontos da primeira fase
@@ -160,7 +175,7 @@ public class CampeonatoService {
         GeradorDeConfrontos strategy = getStrategy(fase.getFormato());
 
         if (!strategy.validarNumeroTimes(times.size())) {
-            throw new RuntimeException(strategy.getMensagemValidacao(times.size()));
+            throw new RegraNegocioException(strategy.getMensagemValidacao(times.size()));
         }
 
         List<Partida> partidas = strategy.gerarConfrontos(times, fase);
@@ -178,7 +193,7 @@ public class CampeonatoService {
         }
     }
 
-    // ==================== Avançar Fase ====================
+    // Avançar Fase
 
     @Transactional
     public Campeonato avancarParaProximaFase(Long campeonatoId) {
@@ -187,15 +202,15 @@ public class CampeonatoService {
         // Encontra fase atual em andamento
         Fase faseAtual = faseRepository
                 .findFirstByCampeonatoIdAndFinalizadaFalseOrderByOrdemAsc(campeonatoId)
-                .orElseThrow(() -> new RuntimeException("Nenhuma fase em andamento."));
+                .orElseThrow(() -> new OperacaoInvalidaException("Nenhuma fase em andamento"));
 
         // Verifica se todas as partidas foram finalizadas
         Long total = partidaRepository.countByFaseId(faseAtual.getId());
         Long finalizadas = partidaRepository.countFinalizadasByFaseId(faseAtual.getId());
 
         if (!total.equals(finalizadas)) {
-            throw new RuntimeException(
-                    String.format("Ainda há %d partidas pendentes nesta fase.", total - finalizadas));
+            throw new OperacaoInvalidaException(
+                    String.format("Ainda há %d partidas pendentes nesta fase", total - finalizadas));
         }
 
         // Calcula classificados
@@ -225,11 +240,11 @@ public class CampeonatoService {
         return campeonatoRepository.save(campeonato);
     }
 
-    // ==================== Helpers ====================
+    // Helpers
 
     private Campeonato buscarOuFalhar(Long id) {
         return campeonatoRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Campeonato não encontrado: " + id));
+                .orElseThrow(() -> new RecursoNaoEncontradoException("Campeonato", id));
     }
 
     private GeradorDeConfrontos getStrategy(FormatoCompeticao formato) {

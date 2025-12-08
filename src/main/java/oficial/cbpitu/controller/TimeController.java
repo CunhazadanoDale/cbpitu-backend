@@ -1,8 +1,10 @@
 package oficial.cbpitu.controller;
 
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import oficial.cbpitu.dto.CriarTimeDTO;
 import oficial.cbpitu.dto.TimeDTO;
+import oficial.cbpitu.exception.RecursoNaoEncontradoException;
 import oficial.cbpitu.mapper.TimeMapper;
 import oficial.cbpitu.model.Time;
 import oficial.cbpitu.service.TimeService;
@@ -28,14 +30,13 @@ public class TimeController {
 
     @GetMapping("/{id}")
     public ResponseEntity<TimeDTO> buscarPorId(@PathVariable Long id) {
-        return timeService.buscarPorId(id)
-                .map(timeMapper::toDTO)
-                .map(ResponseEntity::ok)
-                .orElse(ResponseEntity.notFound().build());
+        Time time = timeService.buscarPorId(id)
+                .orElseThrow(() -> new RecursoNaoEncontradoException("Time", id));
+        return ResponseEntity.ok(timeMapper.toDTO(time));
     }
 
     @PostMapping
-    public ResponseEntity<TimeDTO> criar(@RequestBody CriarTimeDTO dto) {
+    public ResponseEntity<TimeDTO> criar(@Valid @RequestBody CriarTimeDTO dto) {
         Time criado = timeService.criar(
                 dto.getNomeTime(),
                 dto.getTrofeus(),
@@ -47,7 +48,7 @@ public class TimeController {
     @PutMapping("/{id}")
     public ResponseEntity<TimeDTO> atualizar(
             @PathVariable Long id,
-            @RequestBody CriarTimeDTO dto) {
+            @Valid @RequestBody CriarTimeDTO dto) {
         Time atualizado = timeService.atualizar(
                 id,
                 dto.getNomeTime(),

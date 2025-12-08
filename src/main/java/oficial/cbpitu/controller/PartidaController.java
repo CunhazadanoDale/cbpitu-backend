@@ -1,8 +1,10 @@
 package oficial.cbpitu.controller;
 
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import oficial.cbpitu.dto.campeonato.PartidaDTO;
 import oficial.cbpitu.dto.campeonato.ResultadoDTO;
+import oficial.cbpitu.exception.RecursoNaoEncontradoException;
 import oficial.cbpitu.mapper.PartidaMapper;
 import oficial.cbpitu.model.Partida;
 import oficial.cbpitu.service.PartidaService;
@@ -30,10 +32,9 @@ public class PartidaController {
 
     @GetMapping("/{id}")
     public ResponseEntity<PartidaDTO> buscarPorId(@PathVariable Long id) {
-        return partidaService.buscarPorId(id)
-                .map(partidaMapper::toDTO)
-                .map(ResponseEntity::ok)
-                .orElse(ResponseEntity.notFound().build());
+        Partida partida = partidaService.buscarPorId(id)
+                .orElseThrow(() -> new RecursoNaoEncontradoException("Partida", id));
+        return ResponseEntity.ok(partidaMapper.toDTO(partida));
     }
 
     @GetMapping("/campeonato/{campeonatoId}")
@@ -95,7 +96,7 @@ public class PartidaController {
     @PutMapping("/{id}/resultado")
     public ResponseEntity<PartidaDTO> registrarResultado(
             @PathVariable Long id,
-            @RequestBody ResultadoDTO resultado) {
+            @Valid @RequestBody ResultadoDTO resultado) {
         Partida partida = partidaService.registrarResultado(
                 id,
                 resultado.getPlacarTime1(),
@@ -106,7 +107,7 @@ public class PartidaController {
     @PutMapping("/{id}/resultado-serie")
     public ResponseEntity<PartidaDTO> registrarResultadoSerie(
             @PathVariable Long id,
-            @RequestBody ResultadoDTO resultado) {
+            @Valid @RequestBody ResultadoDTO resultado) {
         Partida partida = partidaService.registrarResultadoSerie(
                 id,
                 resultado.getPlacarTime1(),
@@ -125,7 +126,7 @@ public class PartidaController {
     @PutMapping("/{id}/corrigir")
     public ResponseEntity<PartidaDTO> corrigirResultado(
             @PathVariable Long id,
-            @RequestBody ResultadoDTO resultado) {
+            @Valid @RequestBody ResultadoDTO resultado) {
         Partida partida = partidaService.corrigirResultado(
                 id,
                 resultado.getPlacarTime1(),

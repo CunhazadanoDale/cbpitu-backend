@@ -1,6 +1,8 @@
 package oficial.cbpitu.service;
 
 import lombok.RequiredArgsConstructor;
+import oficial.cbpitu.exception.RecursoNaoEncontradoException;
+import oficial.cbpitu.exception.RegraNegocioException;
 import oficial.cbpitu.model.Jogador;
 import oficial.cbpitu.model.Time;
 import oficial.cbpitu.repository.JogadorRepository;
@@ -39,7 +41,7 @@ public class TimeService {
 
         if (capitaoId != null) {
             Jogador capitao = jogadorRepository.findById(capitaoId)
-                    .orElseThrow(() -> new RuntimeException("Jogador não encontrado: " + capitaoId));
+                    .orElseThrow(() -> new RecursoNaoEncontradoException("Jogador", capitaoId));
             time.setCapitao(capitao);
             time.getJogadores().add(capitao);
         }
@@ -56,7 +58,7 @@ public class TimeService {
 
         if (capitaoId != null) {
             Jogador capitao = jogadorRepository.findById(capitaoId)
-                    .orElseThrow(() -> new RuntimeException("Jogador não encontrado: " + capitaoId));
+                    .orElseThrow(() -> new RecursoNaoEncontradoException("Jogador", capitaoId));
             time.setCapitao(capitao);
         }
 
@@ -75,7 +77,11 @@ public class TimeService {
     public Time adicionarJogador(Long timeId, Long jogadorId) {
         Time time = buscarOuFalhar(timeId);
         Jogador jogador = jogadorRepository.findById(jogadorId)
-                .orElseThrow(() -> new RuntimeException("Jogador não encontrado: " + jogadorId));
+                .orElseThrow(() -> new RecursoNaoEncontradoException("Jogador", jogadorId));
+
+        if (time.getJogadores().contains(jogador)) {
+            throw new RegraNegocioException("Jogador já faz parte deste time");
+        }
 
         time.getJogadores().add(jogador);
         return timeRepository.save(time);
@@ -85,7 +91,11 @@ public class TimeService {
     public Time removerJogador(Long timeId, Long jogadorId) {
         Time time = buscarOuFalhar(timeId);
         Jogador jogador = jogadorRepository.findById(jogadorId)
-                .orElseThrow(() -> new RuntimeException("Jogador não encontrado: " + jogadorId));
+                .orElseThrow(() -> new RecursoNaoEncontradoException("Jogador", jogadorId));
+
+        if (!time.getJogadores().contains(jogador)) {
+            throw new RegraNegocioException("Jogador não faz parte deste time");
+        }
 
         time.getJogadores().remove(jogador);
 
@@ -101,7 +111,7 @@ public class TimeService {
     public Time definirCapitao(Long timeId, Long jogadorId) {
         Time time = buscarOuFalhar(timeId);
         Jogador jogador = jogadorRepository.findById(jogadorId)
-                .orElseThrow(() -> new RuntimeException("Jogador não encontrado: " + jogadorId));
+                .orElseThrow(() -> new RecursoNaoEncontradoException("Jogador", jogadorId));
 
         // O capitão precisa ser parte do time
         if (!time.getJogadores().contains(jogador)) {
@@ -113,9 +123,8 @@ public class TimeService {
     }
 
     // Helper
-
     private Time buscarOuFalhar(Long id) {
         return timeRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Time não encontrado: " + id));
+                .orElseThrow(() -> new RecursoNaoEncontradoException("Time", id));
     }
 }

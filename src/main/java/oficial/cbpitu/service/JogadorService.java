@@ -1,6 +1,7 @@
 package oficial.cbpitu.service;
 
 import lombok.RequiredArgsConstructor;
+import oficial.cbpitu.exception.RecursoNaoEncontradoException;
 import oficial.cbpitu.model.Jogador;
 import oficial.cbpitu.model.Time;
 import oficial.cbpitu.repository.JogadorRepository;
@@ -31,20 +32,18 @@ public class JogadorService {
 
     @Transactional
     public Jogador atualizar(Long id, Jogador dados) {
-        return jogadorRepository.findById(id)
-                .map(j -> {
-                    j.setNickname(dados.getNickname());
-                    j.setNomeReal(dados.getNomeReal());
-                    j.setLaneLol(dados.getLaneLol());
-                    return jogadorRepository.save(j);
-                })
-                .orElseThrow(() -> new RuntimeException("Jogador não encontrado: " + id));
+        Jogador jogador = buscarOuFalhar(id);
+
+        jogador.setNickname(dados.getNickname());
+        jogador.setNomeReal(dados.getNomeReal());
+        jogador.setLaneLol(dados.getLaneLol());
+
+        return jogadorRepository.save(jogador);
     }
 
     @Transactional
     public void deletar(Long id) {
-        Jogador jogador = jogadorRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Jogador não encontrado: " + id));
+        Jogador jogador = buscarOuFalhar(id);
 
         // Remove jogador de todos os times antes de deletar
         for (Time time : jogador.getTimes()) {
@@ -67,5 +66,11 @@ public class JogadorService {
         return jogadorRepository.findAll().stream()
                 .filter(j -> j.getTimes().isEmpty())
                 .toList();
+    }
+
+    // Helper
+    private Jogador buscarOuFalhar(Long id) {
+        return jogadorRepository.findById(id)
+                .orElseThrow(() -> new RecursoNaoEncontradoException("Jogador", id));
     }
 }

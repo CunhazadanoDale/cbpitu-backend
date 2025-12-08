@@ -1,8 +1,10 @@
 package oficial.cbpitu.controller;
 
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import oficial.cbpitu.dto.CriarJogadorDTO;
 import oficial.cbpitu.dto.JogadorDTO;
+import oficial.cbpitu.exception.RecursoNaoEncontradoException;
 import oficial.cbpitu.mapper.JogadorMapper;
 import oficial.cbpitu.model.Jogador;
 import oficial.cbpitu.service.JogadorService;
@@ -28,10 +30,9 @@ public class JogadorController {
 
     @GetMapping("/{id}")
     public ResponseEntity<JogadorDTO> buscarPorId(@PathVariable Long id) {
-        return jogadorService.buscarPorId(id)
-                .map(jogadorMapper::toDTO)
-                .map(ResponseEntity::ok)
-                .orElse(ResponseEntity.notFound().build());
+        Jogador jogador = jogadorService.buscarPorId(id)
+                .orElseThrow(() -> new RecursoNaoEncontradoException("Jogador", id));
+        return ResponseEntity.ok(jogadorMapper.toDTO(jogador));
     }
 
     @GetMapping("/lane/{lane}")
@@ -47,7 +48,7 @@ public class JogadorController {
     }
 
     @PostMapping
-    public ResponseEntity<JogadorDTO> criar(@RequestBody CriarJogadorDTO dto) {
+    public ResponseEntity<JogadorDTO> criar(@Valid @RequestBody CriarJogadorDTO dto) {
         Jogador jogador = jogadorMapper.toEntity(dto);
         Jogador criado = jogadorService.criar(jogador);
         return ResponseEntity.status(HttpStatus.CREATED)
@@ -57,7 +58,7 @@ public class JogadorController {
     @PutMapping("/{id}")
     public ResponseEntity<JogadorDTO> atualizar(
             @PathVariable Long id,
-            @RequestBody CriarJogadorDTO dto) {
+            @Valid @RequestBody CriarJogadorDTO dto) {
         Jogador dados = jogadorMapper.toEntity(dto);
         Jogador atualizado = jogadorService.atualizar(id, dados);
         return ResponseEntity.ok(jogadorMapper.toDTO(atualizado));

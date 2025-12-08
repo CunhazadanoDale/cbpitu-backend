@@ -1,6 +1,9 @@
 package oficial.cbpitu.service;
 
 import lombok.RequiredArgsConstructor;
+import oficial.cbpitu.exception.OperacaoInvalidaException;
+import oficial.cbpitu.exception.RecursoNaoEncontradoException;
+import oficial.cbpitu.exception.RegraNegocioException;
 import oficial.cbpitu.model.Partida;
 import oficial.cbpitu.model.Time;
 import oficial.cbpitu.model.enums.StatusPartida;
@@ -48,11 +51,19 @@ public class PartidaService {
         return partidaRepository.findByCampeonatoIdAndStatus(campeonatoId, StatusPartida.PENDENTE);
     }
 
-    // ==================== Agendamento ====================
+    // Agendamento
 
     @Transactional
     public Partida agendarPartida(Long partidaId, LocalDateTime dataHora) {
         Partida partida = buscarOuFalhar(partidaId);
+
+        if (partida.isFinalizada()) {
+            throw new OperacaoInvalidaException("Não é possível agendar uma partida já finalizada");
+        }
+
+        if (dataHora.isBefore(LocalDateTime.now())) {
+            throw new RegraNegocioException("Data/hora de agendamento deve ser no futuro");
+        }
 
         partida.setDataHora(dataHora);
         partida.setStatus(StatusPartida.AGENDADA);
@@ -63,18 +74,23 @@ public class PartidaService {
     @Transactional
     public Partida iniciarPartida(Long partidaId) {
         Partida partida = buscarOuFalhar(partidaId);
+
+        if (partida.isFinalizada()) {
+            throw new OperacaoInvalidaException("Partida já foi finalizada");
+        }
+
         partida.setStatus(StatusPartida.EM_ANDAMENTO);
         return partidaRepository.save(partida);
     }
 
-    // registro resultado
+    // Registro de resultado
 
     @Transactional
     public Partida registrarResultado(Long partidaId, int placarTime1, int placarTime2) {
         Partida partida = buscarOuFalhar(partidaId);
 
         if (partida.isFinalizada()) {
-            throw new RuntimeException("Partida já foi finalizada.");
+            throw new OperacaoInvalidaException("Partida já foi finalizada. Use a opção de corrigir resultado.");
         }
 
         partida.registrarResultado(placarTime1, placarTime2);
@@ -87,7 +103,7 @@ public class PartidaService {
         Partida partida = buscarOuFalhar(partidaId);
 
         if (partida.isFinalizada()) {
-            throw new RuntimeException("Série já foi finalizada.");
+            throw new OperacaoInvalidaException("Série já foi finalizada");
         }
 
         partida.registrarResultadoSerie(vitoriasTime1, vitoriasTime2);
@@ -99,10 +115,10 @@ public class PartidaService {
     public Partida registrarWO(Long partidaId, Long timeVencedorId) {
         Partida partida = buscarOuFalhar(partidaId);
         Time vencedor = timeRepository.findById(timeVencedorId)
-                .orElseThrow(() -> new RuntimeException("Time não encontrado: " + timeVencedorId));
+                .orElseThrow(() -> new RecursoNaoEncontradoException("Time", timeVencedorId));
 
         if (!vencedor.equals(partida.getTime1()) && !vencedor.equals(partida.getTime2())) {
-            throw new RuntimeException("Time informado não participa desta partida.");
+            throw new RegraNegocioException("Time informado não participa desta partida");
         }
 
         partida.setVencedor(vencedor);
@@ -120,11 +136,16 @@ public class PartidaService {
         return partidaRepository.save(partida);
     }
 
-    // alteracao status
+    // Alterações de status
 
     @Transactional
     public Partida cancelarPartida(Long partidaId) {
         Partida partida = buscarOuFalhar(partidaId);
+
+        if (partida.isFinalizada()) {
+            throw new OperacaoInvalidaException("Não é possível cancelar uma partida já finalizada");
+        }
+
         partida.setStatus(StatusPartida.CANCELADA);
         return partidaRepository.save(partida);
     }
@@ -132,6 +153,11 @@ public class PartidaService {
     @Transactional
     public Partida adiarPartida(Long partidaId) {
         Partida partida = buscarOuFalhar(partidaId);
+
+        if (partida.isFinalizada()) {
+            throw new OperacaoInvalidaException("Não é possível adiar uma partida já finalizada");
+        }
+
         partida.setStatus(StatusPartida.ADIADA);
         partida.setDataHora(null);
         return partidaRepository.save(partida);
@@ -179,10 +205,10 @@ public class PartidaService {
                 .toList();
     }
 
-    // metodo auxiliar
+    // Helper
 
     private Partida buscarOuFalhar(Long id) {
         return partidaRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Partida não encontrada: " + id));
+                .orElseThrow(() -> new RecursoNaoEncontradoException("Partida", id));
     }
 }

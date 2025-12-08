@@ -1,7 +1,9 @@
 package oficial.cbpitu.controller;
 
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import oficial.cbpitu.dto.campeonato.*;
+import oficial.cbpitu.exception.RecursoNaoEncontradoException;
 import oficial.cbpitu.mapper.CampeonatoMapper;
 import oficial.cbpitu.mapper.ClassificacaoMapper;
 import oficial.cbpitu.mapper.FaseMapper;
@@ -31,28 +33,25 @@ public class CampeonatoController {
 
     @GetMapping
     public ResponseEntity<List<CampeonatoDTO>> listarTodos() {
-        List<CampeonatoDTO> campeonatos = campeonatoMapper.toDTOList(
-                campeonatoService.listarTodos());
-        return ResponseEntity.ok(campeonatos);
+        return ResponseEntity.ok(
+                campeonatoMapper.toDTOList(campeonatoService.listarTodos()));
     }
 
     @GetMapping("/ativos")
     public ResponseEntity<List<CampeonatoDTO>> listarAtivos() {
-        List<CampeonatoDTO> campeonatos = campeonatoMapper.toDTOList(
-                campeonatoService.listarAtivos());
-        return ResponseEntity.ok(campeonatos);
+        return ResponseEntity.ok(
+                campeonatoMapper.toDTOList(campeonatoService.listarAtivos()));
     }
 
     @GetMapping("/{id}")
     public ResponseEntity<CampeonatoDTO> buscarPorId(@PathVariable Long id) {
-        return campeonatoService.buscarPorId(id)
-                .map(campeonatoMapper::toDTO)
-                .map(ResponseEntity::ok)
-                .orElse(ResponseEntity.notFound().build());
+        Campeonato campeonato = campeonatoService.buscarPorId(id)
+                .orElseThrow(() -> new RecursoNaoEncontradoException("Campeonato", id));
+        return ResponseEntity.ok(campeonatoMapper.toDTO(campeonato));
     }
 
     @PostMapping
-    public ResponseEntity<CampeonatoDTO> criar(@RequestBody CriarCampeonatoDTO dto) {
+    public ResponseEntity<CampeonatoDTO> criar(@Valid @RequestBody CriarCampeonatoDTO dto) {
         Campeonato campeonato = campeonatoMapper.toEntity(dto);
         Campeonato criado = campeonatoService.criar(campeonato);
         return ResponseEntity.status(HttpStatus.CREATED)
@@ -114,7 +113,7 @@ public class CampeonatoController {
     @PostMapping("/{id}/fases")
     public ResponseEntity<FaseDTO> adicionarFase(
             @PathVariable Long id,
-            @RequestBody CriarFaseDTO dto) {
+            @Valid @RequestBody CriarFaseDTO dto) {
         Fase fase = campeonatoService.adicionarFase(
                 id,
                 dto.getNome(),
