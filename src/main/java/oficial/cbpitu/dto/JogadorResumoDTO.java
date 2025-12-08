@@ -2,19 +2,17 @@ package oficial.cbpitu.dto;
 
 import lombok.*;
 
-import java.util.ArrayList;
-import java.util.List;
-
+/**
+ * DTO resumido de jogador para evitar referências circulares.
+ */
 @Getter
 @Setter
 @AllArgsConstructor
 @NoArgsConstructor
 @Builder
-public class JogadorDTO {
+public class JogadorResumoDTO {
 
     private Long id;
     private String nickname;
-    private String nomeReal;
     private String laneLol;
-    private List<TimeResumoDTO> times = new ArrayList<>();
 }
