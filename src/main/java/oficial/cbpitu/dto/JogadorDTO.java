@@ -16,11 +16,4 @@ public class JogadorDTO {
     private String nickname;
     private String nomeReal;
     private String role;
-
-    public JogadorDTO(Jogador entity) {
-        this.id = entity.getId();
-        this.nickname = entity.getNickname();
-        this.nomeReal = entity.getNomeReal();
-        this.role = entity.getRole();
-    }
 }

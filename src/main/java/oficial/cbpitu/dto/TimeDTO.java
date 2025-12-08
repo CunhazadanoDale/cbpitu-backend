@@ -21,14 +21,4 @@ public class TimeDTO {
     private String trofeus;
     private JogadorDTO capitao;
     private Set<JogadorDTO> jogadores = new HashSet<>();
-
-    public TimeDTO(Time entity) {
-        this.id = entity.getId();
-        this.nomeTime = entity.getNomeTime();
-        this.trofeus = entity.getTrofeus();
-        if (entity.getCapitao() != null) {
-            this.capitao = new JogadorDTO(entity.getCapitao());
-        }
-        this.jogadores = entity.getJogadores().stream().map(JogadorDTO::new).collect(Collectors.toSet());
-    }
 }
