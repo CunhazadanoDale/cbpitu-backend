@@ -1,9 +1,12 @@
 package oficial.cbpitu.service;
 
 import lombok.RequiredArgsConstructor;
+import oficial.cbpitu.model.Jogador;
 import oficial.cbpitu.model.Time;
+import oficial.cbpitu.repository.JogadorRepository;
 import oficial.cbpitu.repository.TimeRepository;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.Optional;
@@ -13,41 +16,106 @@ import java.util.Optional;
 public class TimeService {
 
     private final TimeRepository timeRepository;
+    private final JogadorRepository jogadorRepository;
 
-    public List<Time> listarTodosOsTimes() {
+    public List<Time> listarTodos() {
         return timeRepository.findAll();
     }
 
-    public Time criarTime(Time time) {
+    public Optional<Time> buscarPorId(Long id) {
+        return timeRepository.findById(id);
+    }
+
+    @Transactional
+    public Time criar(Time time) {
         return timeRepository.save(time);
     }
 
-    public void deletarTime(Long id) {
+    @Transactional
+    public Time criar(String nomeTime, String trofeus, Long capitaoId) {
+        Time time = new Time();
+        time.setNomeTime(nomeTime);
+        time.setTrofeus(trofeus);
 
-        Optional<Time> time = timeRepository.findById(id);
-
-        if (time.isPresent()) {
-            Time timeTeu = time.stream().findFirst().get();
-
-            timeRepository.delete(timeTeu);
+        if (capitaoId != null) {
+            Jogador capitao = jogadorRepository.findById(capitaoId)
+                    .orElseThrow(() -> new RuntimeException("Jogador não encontrado: " + capitaoId));
+            time.setCapitao(capitao);
+            time.getJogadores().add(capitao);
         }
 
+        return timeRepository.save(time);
     }
 
-    public void alterarTime(Long id, Time timeAlterado) {
+    @Transactional
+    public Time atualizar(Long id, String nomeTime, String trofeus, Long capitaoId) {
+        Time time = buscarOuFalhar(id);
 
-        Optional<Time> timeParaAlterar = timeRepository.findById(id);
+        time.setNomeTime(nomeTime);
+        time.setTrofeus(trofeus);
 
-        if (timeParaAlterar.isPresent()) {
-            Time timeNovo = timeParaAlterar.get();
-
-            // timeNovo.setId(id);
-            timeNovo.setTrofeus(timeAlterado.getTrofeus());
-            timeNovo.setCampeonatosParticipados(timeAlterado.getCampeonatosParticipados());
-            timeNovo.setCapitao(timeAlterado.getCapitao());
-            timeNovo.setJogadores(timeAlterado.getJogadores());
-
-            timeRepository.save(timeNovo);
+        if (capitaoId != null) {
+            Jogador capitao = jogadorRepository.findById(capitaoId)
+                    .orElseThrow(() -> new RuntimeException("Jogador não encontrado: " + capitaoId));
+            time.setCapitao(capitao);
         }
+
+        return timeRepository.save(time);
+    }
+
+    @Transactional
+    public void deletar(Long id) {
+        Time time = buscarOuFalhar(id);
+        timeRepository.delete(time);
+    }
+
+    // Gerenciamento de jogadores no time
+
+    @Transactional
+    public Time adicionarJogador(Long timeId, Long jogadorId) {
+        Time time = buscarOuFalhar(timeId);
+        Jogador jogador = jogadorRepository.findById(jogadorId)
+                .orElseThrow(() -> new RuntimeException("Jogador não encontrado: " + jogadorId));
+
+        time.getJogadores().add(jogador);
+        return timeRepository.save(time);
+    }
+
+    @Transactional
+    public Time removerJogador(Long timeId, Long jogadorId) {
+        Time time = buscarOuFalhar(timeId);
+        Jogador jogador = jogadorRepository.findById(jogadorId)
+                .orElseThrow(() -> new RuntimeException("Jogador não encontrado: " + jogadorId));
+
+        time.getJogadores().remove(jogador);
+
+        // Se o jogador removido era o capitão, remove também
+        if (time.getCapitao() != null && time.getCapitao().equals(jogador)) {
+            time.setCapitao(null);
+        }
+
+        return timeRepository.save(time);
+    }
+
+    @Transactional
+    public Time definirCapitao(Long timeId, Long jogadorId) {
+        Time time = buscarOuFalhar(timeId);
+        Jogador jogador = jogadorRepository.findById(jogadorId)
+                .orElseThrow(() -> new RuntimeException("Jogador não encontrado: " + jogadorId));
+
+        // O capitão precisa ser parte do time
+        if (!time.getJogadores().contains(jogador)) {
+            time.getJogadores().add(jogador);
+        }
+
+        time.setCapitao(jogador);
+        return timeRepository.save(time);
+    }
+
+    // Helper
+
+    private Time buscarOuFalhar(Long id) {
+        return timeRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Time não encontrado: " + id));
     }
 }
