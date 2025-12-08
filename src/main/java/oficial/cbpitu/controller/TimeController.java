@@ -1,4 +1,4 @@
-package oficial.cbpitu.controlller;
+package oficial.cbpitu.controller;
 
 import lombok.RequiredArgsConstructor;
 import oficial.cbpitu.model.Time;
