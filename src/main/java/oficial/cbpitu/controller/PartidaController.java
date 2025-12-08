@@ -1,17 +1,16 @@
 package oficial.cbpitu.controller;
 
 import lombok.RequiredArgsConstructor;
-import oficial.cbpitu.dto.*;
 import oficial.cbpitu.dto.campeonato.PartidaDTO;
 import oficial.cbpitu.dto.campeonato.ResultadoDTO;
-import oficial.cbpitu.model.*;
+import oficial.cbpitu.mapper.PartidaMapper;
+import oficial.cbpitu.model.Partida;
 import oficial.cbpitu.service.PartidaService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDateTime;
 import java.util.List;
-import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api/partidas")
@@ -19,98 +18,79 @@ import java.util.stream.Collectors;
 public class PartidaController {
 
     private final PartidaService partidaService;
+    private final PartidaMapper partidaMapper;
 
-    // ==================== Listagem ====================
+    // Listagem
 
     @GetMapping
     public ResponseEntity<List<PartidaDTO>> listarTodas() {
-        List<PartidaDTO> partidas = partidaService.listarTodas()
-                .stream()
-                .map(this::toDTO)
-                .collect(Collectors.toList());
-        return ResponseEntity.ok(partidas);
+        return ResponseEntity.ok(
+                partidaMapper.toDTOList(partidaService.listarTodas()));
     }
 
     @GetMapping("/{id}")
     public ResponseEntity<PartidaDTO> buscarPorId(@PathVariable Long id) {
         return partidaService.buscarPorId(id)
-                .map(p -> ResponseEntity.ok(toDTO(p)))
+                .map(partidaMapper::toDTO)
+                .map(ResponseEntity::ok)
                 .orElse(ResponseEntity.notFound().build());
     }
 
     @GetMapping("/campeonato/{campeonatoId}")
     public ResponseEntity<List<PartidaDTO>> listarPorCampeonato(@PathVariable Long campeonatoId) {
-        List<PartidaDTO> partidas = partidaService.listarPorCampeonato(campeonatoId)
-                .stream()
-                .map(this::toDTO)
-                .collect(Collectors.toList());
-        return ResponseEntity.ok(partidas);
+        return ResponseEntity.ok(
+                partidaMapper.toDTOList(partidaService.listarPorCampeonato(campeonatoId)));
     }
 
     @GetMapping("/fase/{faseId}")
     public ResponseEntity<List<PartidaDTO>> listarPorFase(@PathVariable Long faseId) {
-        List<PartidaDTO> partidas = partidaService.listarPorFase(faseId)
-                .stream()
-                .map(this::toDTO)
-                .collect(Collectors.toList());
-        return ResponseEntity.ok(partidas);
+        return ResponseEntity.ok(
+                partidaMapper.toDTOList(partidaService.listarPorFase(faseId)));
     }
 
     @GetMapping("/grupo/{grupoId}")
     public ResponseEntity<List<PartidaDTO>> listarPorGrupo(@PathVariable Long grupoId) {
-        List<PartidaDTO> partidas = partidaService.listarPorGrupo(grupoId)
-                .stream()
-                .map(this::toDTO)
-                .collect(Collectors.toList());
-        return ResponseEntity.ok(partidas);
+        return ResponseEntity.ok(
+                partidaMapper.toDTOList(partidaService.listarPorGrupo(grupoId)));
     }
 
     @GetMapping("/time/{timeId}")
     public ResponseEntity<List<PartidaDTO>> listarPorTime(@PathVariable Long timeId) {
-        List<PartidaDTO> partidas = partidaService.listarPorTime(timeId)
-                .stream()
-                .map(this::toDTO)
-                .collect(Collectors.toList());
-        return ResponseEntity.ok(partidas);
+        return ResponseEntity.ok(
+                partidaMapper.toDTOList(partidaService.listarPorTime(timeId)));
     }
 
     @GetMapping("/campeonato/{campeonatoId}/pendentes")
     public ResponseEntity<List<PartidaDTO>> listarPendentes(@PathVariable Long campeonatoId) {
-        List<PartidaDTO> partidas = partidaService.listarPendentesPorCampeonato(campeonatoId)
-                .stream()
-                .map(this::toDTO)
-                .collect(Collectors.toList());
-        return ResponseEntity.ok(partidas);
+        return ResponseEntity.ok(
+                partidaMapper.toDTOList(partidaService.listarPendentesPorCampeonato(campeonatoId)));
     }
 
     @GetMapping("/campeonato/{campeonatoId}/proximas")
     public ResponseEntity<List<PartidaDTO>> listarProximas(
             @PathVariable Long campeonatoId,
             @RequestParam(defaultValue = "5") int limite) {
-        List<PartidaDTO> partidas = partidaService.buscarProximasPartidas(campeonatoId, limite)
-                .stream()
-                .map(this::toDTO)
-                .collect(Collectors.toList());
-        return ResponseEntity.ok(partidas);
+        return ResponseEntity.ok(
+                partidaMapper.toDTOList(partidaService.buscarProximasPartidas(campeonatoId, limite)));
     }
 
-    // ==================== Agendamento ====================
+    // Agendamento
 
     @PutMapping("/{id}/agendar")
     public ResponseEntity<PartidaDTO> agendar(
             @PathVariable Long id,
             @RequestParam LocalDateTime dataHora) {
         Partida partida = partidaService.agendarPartida(id, dataHora);
-        return ResponseEntity.ok(toDTO(partida));
+        return ResponseEntity.ok(partidaMapper.toDTO(partida));
     }
 
     @PostMapping("/{id}/iniciar")
     public ResponseEntity<PartidaDTO> iniciar(@PathVariable Long id) {
         Partida partida = partidaService.iniciarPartida(id);
-        return ResponseEntity.ok(toDTO(partida));
+        return ResponseEntity.ok(partidaMapper.toDTO(partida));
     }
 
-    // ==================== Resultado ====================
+    // Resultado
 
     @PutMapping("/{id}/resultado")
     public ResponseEntity<PartidaDTO> registrarResultado(
@@ -120,7 +100,7 @@ public class PartidaController {
                 id,
                 resultado.getPlacarTime1(),
                 resultado.getPlacarTime2());
-        return ResponseEntity.ok(toDTO(partida));
+        return ResponseEntity.ok(partidaMapper.toDTO(partida));
     }
 
     @PutMapping("/{id}/resultado-serie")
@@ -131,7 +111,7 @@ public class PartidaController {
                 id,
                 resultado.getPlacarTime1(),
                 resultado.getPlacarTime2());
-        return ResponseEntity.ok(toDTO(partida));
+        return ResponseEntity.ok(partidaMapper.toDTO(partida));
     }
 
     @PutMapping("/{id}/wo/{timeVencedorId}")
@@ -139,7 +119,7 @@ public class PartidaController {
             @PathVariable Long id,
             @PathVariable Long timeVencedorId) {
         Partida partida = partidaService.registrarWO(id, timeVencedorId);
-        return ResponseEntity.ok(toDTO(partida));
+        return ResponseEntity.ok(partidaMapper.toDTO(partida));
     }
 
     @PutMapping("/{id}/corrigir")
@@ -150,45 +130,20 @@ public class PartidaController {
                 id,
                 resultado.getPlacarTime1(),
                 resultado.getPlacarTime2());
-        return ResponseEntity.ok(toDTO(partida));
+        return ResponseEntity.ok(partidaMapper.toDTO(partida));
     }
 
-    // ==================== Status ====================
+    // Status
 
     @PostMapping("/{id}/adiar")
     public ResponseEntity<PartidaDTO> adiar(@PathVariable Long id) {
         Partida partida = partidaService.adiarPartida(id);
-        return ResponseEntity.ok(toDTO(partida));
+        return ResponseEntity.ok(partidaMapper.toDTO(partida));
     }
 
     @PostMapping("/{id}/cancelar")
     public ResponseEntity<PartidaDTO> cancelar(@PathVariable Long id) {
         Partida partida = partidaService.cancelarPartida(id);
-        return ResponseEntity.ok(toDTO(partida));
-    }
-
-    // ==================== Mapeamento ====================
-
-    private PartidaDTO toDTO(Partida p) {
-        return PartidaDTO.builder()
-                .id(p.getId())
-                .time1(p.getTime1() != null ? toTimeResumoDTO(p.getTime1()) : null)
-                .time2(p.getTime2() != null ? toTimeResumoDTO(p.getTime2()) : null)
-                .placarTime1(p.getPlacarTime1())
-                .placarTime2(p.getPlacarTime2())
-                .dataHora(p.getDataHora())
-                .status(p.getStatus())
-                .rodada(p.getRodada())
-                .identificadorBracket(p.getIdentificadorBracket())
-                .vencedor(p.getVencedor() != null ? toTimeResumoDTO(p.getVencedor()) : null)
-                .nomeGrupo(p.getGrupo() != null ? p.getGrupo().getNome() : null)
-                .build();
-    }
-
-    private TimeResumoDTO toTimeResumoDTO(Time t) {
-        return TimeResumoDTO.builder()
-                .id(t.getId())
-                .nomeTime(t.getNomeTime())
-                .build();
+        return ResponseEntity.ok(partidaMapper.toDTO(partida));
     }
 }
