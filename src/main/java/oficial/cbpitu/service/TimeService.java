@@ -3,8 +3,10 @@ package oficial.cbpitu.service;
 import lombok.RequiredArgsConstructor;
 import oficial.cbpitu.exception.RecursoNaoEncontradoException;
 import oficial.cbpitu.exception.RegraNegocioException;
+import oficial.cbpitu.model.Campeonato;
 import oficial.cbpitu.model.Jogador;
 import oficial.cbpitu.model.Time;
+import oficial.cbpitu.repository.CampeonatoRepository;
 import oficial.cbpitu.repository.JogadorRepository;
 import oficial.cbpitu.repository.TimeRepository;
 import org.springframework.stereotype.Service;
@@ -19,6 +21,7 @@ public class TimeService {
 
     private final TimeRepository timeRepository;
     private final JogadorRepository jogadorRepository;
+    private final CampeonatoRepository campeonatoRepository;
 
     public List<Time> listarTodos() {
         return timeRepository.findAll();
@@ -68,6 +71,24 @@ public class TimeService {
     @Transactional
     public void deletar(Long id) {
         Time time = buscarOuFalhar(id);
+
+        // Remove o time de todos os campeonatos em que está inscrito
+        List<Campeonato> campeonatos = campeonatoRepository.findByTimeParticipante(id);
+        for (Campeonato campeonato : campeonatos) {
+            campeonato.removerTime(time);
+            // Se o time era o campeão, remove também
+            if (time.equals(campeonato.getCampeao())) {
+                campeonato.setCampeao(null);
+            }
+            campeonatoRepository.save(campeonato);
+        }
+
+        // Limpa os jogadores do time
+        time.getJogadores().clear();
+        time.setCapitao(null);
+        timeRepository.save(time);
+
+        // Agora pode deletar
         timeRepository.delete(time);
     }
 
