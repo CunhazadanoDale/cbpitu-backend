@@ -70,24 +70,34 @@ public class LoserBracketStrategy implements GeradorDeConfrontos {
     /**
      * Gera partidas do Losers Bracket com os perdedores.
      */
-    public List<Partida> gerarRodadaLosers(Fase fase, List<Time> perdedores, int rodadaLB) {
+    public List<Partida> gerarRodadaLosers(Fase fase, List<Time> timesA, List<Time> timesB, int rodadaLB) {
         List<Partida> partidas = new ArrayList<>();
+        List<Time> pool = new ArrayList<>();
+        if (timesA != null)
+            pool.addAll(timesA);
+        if (timesB != null)
+            pool.addAll(timesB);
 
-        // Primeira rodada do LB: perdedores se enfrentam
-        for (int i = 0; i < perdedores.size(); i += 2) {
-            if (i + 1 >= perdedores.size())
-                break; // Ímpar = bye
+        // Se a rodada for "misturada" (Drop do WB + Vencedores do LB), precisamos
+        // garantir que não joguem contra quem já jogaram?
+        // Simplificação: Sorteia
+        // TODO: Melhorar seed para evitar rematches imediatos se possível
+        // Collections.shuffle(pool); // Opcional, geralmente segue chave fixa, mas
+        // simplificado aqui.
+
+        for (int i = 0; i < pool.size(); i += 2) {
+            if (i + 1 >= pool.size())
+                break;
 
             Partida partida = new Partida();
-            partida.setTime1(perdedores.get(i));
-            partida.setTime2(perdedores.get(i + 1));
+            partida.setTime1(pool.get(i));
+            partida.setTime2(pool.get(i + 1));
             partida.setFase(fase);
-            partida.setRodada(100 + rodadaLB); // Rodadas LB: 101, 102, 103...
+            partida.setRodada(100 + rodadaLB);
             partida.setStatus(StatusPartida.PENDENTE);
             partida.setIdentificadorBracket(LOSERS_BRACKET + "-R" + rodadaLB + "-" + ((i / 2) + 1));
             partidas.add(partida);
         }
-
         return partidas;
     }
 

@@ -23,7 +23,7 @@ public class MataMataStrategy implements GeradorDeConfrontos {
         Collections.shuffle(timesSorteados);
 
         int numTimes = timesSorteados.size();
-        int rodada = calcularRodadaInicial(numTimes);
+        int rodada = 1;
 
         // Gera confrontos da primeira rodada
         for (int i = 0; i < numTimes; i += 2) {
@@ -33,7 +33,9 @@ public class MataMataStrategy implements GeradorDeConfrontos {
             partida.setFase(fase);
             partida.setRodada(rodada);
             partida.setStatus(StatusPartida.PENDENTE);
-            partida.setIdentificadorBracket(gerarIdentificadorBracket(rodada, (i / 2) + 1));
+
+            int numPartidas = numTimes / 2;
+            partida.setIdentificadorBracket(gerarNomeFase(numPartidas) + " " + ((i / 2) + 1));
             partidas.add(partida);
         }
 
@@ -45,7 +47,18 @@ public class MataMataStrategy implements GeradorDeConfrontos {
      */
     public List<Partida> gerarProximaRodada(Fase fase, List<Time> vencedores) {
         List<Partida> partidas = new ArrayList<>();
-        int proximaRodada = calcularProximaRodada(vencedores.size());
+
+        // Descobre rodada atual baseado na última partida
+        int rodadaAtual = 0;
+        if (!fase.getPartidas().isEmpty()) {
+            rodadaAtual = fase.getPartidas().stream()
+                    .mapToInt(Partida::getRodada)
+                    .max()
+                    .orElse(0);
+        }
+
+        int proximaRodada = rodadaAtual + 1;
+        int numMatches = vencedores.size() / 2;
 
         for (int i = 0; i < vencedores.size(); i += 2) {
             Partida partida = new Partida();
@@ -54,7 +67,8 @@ public class MataMataStrategy implements GeradorDeConfrontos {
             partida.setFase(fase);
             partida.setRodada(proximaRodada);
             partida.setStatus(StatusPartida.PENDENTE);
-            partida.setIdentificadorBracket(gerarIdentificadorBracket(proximaRodada, (i / 2) + 1));
+
+            partida.setIdentificadorBracket(gerarNomeFase(numMatches) + " " + ((i / 2) + 1));
             partidas.add(partida);
         }
 
@@ -66,11 +80,11 @@ public class MataMataStrategy implements GeradorDeConfrontos {
         // No mata-mata, o classificado é o vencedor da final
         List<Time> classificados = new ArrayList<>();
 
-        // Encontra a partida da final (menor rodada restante)
+        // No mata-mata, o classificado é o vencedor da final (última rodada)
+
         fase.getPartidas().stream()
                 .filter(Partida::isFinalizada)
-                .filter(p -> p.getRodada() == 1) // Final
-                .findFirst()
+                .max(java.util.Comparator.comparingInt(Partida::getRodada))
                 .ifPresent(final_ -> {
                     if (final_.getVencedor() != null) {
                         classificados.add(final_.getVencedor());
@@ -123,30 +137,13 @@ public class MataMataStrategy implements GeradorDeConfrontos {
         return potencia;
     }
 
-    private int calcularRodadaInicial(int numTimes) {
-        // 2 times = rodada 1 (final)
-        // 4 times = rodada 2 (semifinal)
-        // 8 times = rodada 3 (quartas)
-        int rodada = 0;
-        int times = numTimes;
-        while (times >= 2) {
-            rodada++;
-            times /= 2;
-        }
-        return rodada;
-    }
-
-    private int calcularProximaRodada(int numTimesRestantes) {
-        return calcularRodadaInicial(numTimesRestantes);
-    }
-
-    private String gerarIdentificadorBracket(int rodada, int numeroPartida) {
-        return switch (rodada) {
+    private String gerarNomeFase(int numPartidas) {
+        return switch (numPartidas) {
             case 1 -> "FINAL";
-            case 2 -> "SF" + numeroPartida;
-            case 3 -> "QF" + numeroPartida;
-            case 4 -> "OF" + numeroPartida;
-            default -> "R" + rodada + "-" + numeroPartida;
+            case 2 -> "SEMIFINAL";
+            case 4 -> "QUARTAS";
+            case 8 -> "OITAVAS";
+            default -> "RODADA DE " + (numPartidas * 2);
         };
     }
 }

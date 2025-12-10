@@ -34,6 +34,19 @@ public class FaseDeGruposStrategy implements GeradorDeConfrontos {
     }
 
     /**
+     * Gera partidas para grupos já definidos.
+     */
+    public List<Partida> gerarPartidasParaGrupos(List<Grupo> grupos, Fase fase) {
+        List<Partida> todasPartidas = new ArrayList<>();
+        for (Grupo grupo : grupos) {
+            List<Time> timesDoGrupo = new ArrayList<>(grupo.getTimes());
+            List<Partida> partidasDoGrupo = gerarRoundRobin(timesDoGrupo, fase, grupo);
+            todasPartidas.addAll(partidasDoGrupo);
+        }
+        return todasPartidas;
+    }
+
+    /**
      * Divide os times em grupos de forma equilibrada.
      */
     public List<Grupo> dividirEmGrupos(List<Time> times, Fase fase) {
@@ -100,6 +113,7 @@ public class FaseDeGruposStrategy implements GeradorDeConfrontos {
             rodada++;
         }
 
+        Collections.shuffle(partidas);
         return partidas;
     }
 
@@ -201,13 +215,15 @@ public class FaseDeGruposStrategy implements GeradorDeConfrontos {
     }
 
     private int calcularNumeroGrupos(int numTimes) {
-        if (numTimes <= 4)
+        // Ajustado para criar grupos maiores (estilo "A e B")
+        // Até 7 times: 1 grupo
+        if (numTimes <= 7)
             return 1;
-        if (numTimes <= 8)
+        // Até 16 times: 2 grupos (A e B)
+        if (numTimes <= 16)
             return 2;
-        if (numTimes <= 12)
-            return 3;
-        return numTimes / TIMES_POR_GRUPO_PADRAO;
+        // Acima disso, tenta manter grupos de ~8 times
+        return numTimes / 8;
     }
 
     // Classe auxiliar para classificação

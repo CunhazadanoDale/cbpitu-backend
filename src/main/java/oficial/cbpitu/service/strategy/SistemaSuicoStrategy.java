@@ -49,89 +49,163 @@ public class SistemaSuicoStrategy implements GeradorDeConfrontos {
 
     /**
      * Gera próxima rodada baseada em pontuações.
+     * Utiliza IDs para garantir consistência e evita problemas com proxis do
+     * Hibernate.
      */
-    public List<Partida> gerarProximaRodada(Fase fase, int rodadaAtual) {
+    public List<Partida> gerarProximaRodada(Fase fase, List<Partida> todasPartidas, int rodadaAtual) {
         List<Partida> novasPartidas = new ArrayList<>();
-        Map<Time, Integer> pontuacoes = calcularPontuacoes(fase);
-        Set<String> confrontosJaRealizados = getConfrontosRealizados(fase);
 
-        // Ordena times por pontuação (maior para menor)
-        List<Time> timesOrdenados = pontuacoes.entrySet().stream()
-                .sorted(Map.Entry.<Time, Integer>comparingByValue().reversed())
+        // 1. Mapa de Pontuações por ID
+        Map<Long, Integer> pontuacoes = calcularPontuacoes(todasPartidas);
+
+        // 2. Cache de objetos Time (para criar as partidas depois)
+        Map<Long, Time> timeCache = new HashMap<>();
+        // Populando cache com times das partidas
+        todasPartidas.forEach(p -> {
+            if (p.getTime1() != null)
+                timeCache.put(p.getTime1().getId(), p.getTime1());
+            if (p.getTime2() != null)
+                timeCache.put(p.getTime2().getId(), p.getTime2());
+        });
+        // Populando cache com participantes do campeonato (caso ainda não tenham jogado
+        // ou para garantir todos)
+        for (Time t : fase.getCampeonato().getTimesParticipantes()) {
+            timeCache.put(t.getId(), t);
+        }
+
+        // 3. Verifica confrontos já realizados (Set de "ID1-ID2")
+        Set<String> confrontosJaRealizados = getConfrontosRealizados(todasPartidas);
+
+        // 4. Lista base de times (IDs)
+        // Adiciona todos os participantes ao mapa de pontuação se não existirem
+        for (Long timeId : timeCache.keySet()) {
+            pontuacoes.putIfAbsent(timeId, 0);
+        }
+
+        // 5. Ordena times por pontuação
+        List<Long> timesOrdenados = pontuacoes.entrySet().stream()
+                .sorted(Map.Entry.<Long, Integer>comparingByValue().reversed()) // Pontuação desc
                 .map(Map.Entry::getKey)
                 .collect(Collectors.toList());
 
-        Set<Time> timesJaPareados = new HashSet<>();
+        Set<Long> timesJaPareados = new HashSet<>();
         int proximaRodada = rodadaAtual + 1;
 
-        for (Time time : timesOrdenados) {
-            if (timesJaPareados.contains(time))
+        for (Long timeId : timesOrdenados) {
+            if (timesJaPareados.contains(timeId))
                 continue;
 
-            // Procura adversário com pontuação similar que ainda não enfrentou
-            Time adversario = encontrarAdversario(time, timesOrdenados, pontuacoes,
+            // Procura adversário
+            Long adversarioId = encontrarAdversario(timeId, timesOrdenados, pontuacoes,
                     confrontosJaRealizados, timesJaPareados);
 
-            if (adversario != null) {
+            if (adversarioId != null) {
                 Partida partida = new Partida();
-                partida.setTime1(time);
-                partida.setTime2(adversario);
+                partida.setTime1(timeCache.get(timeId));
+                partida.setTime2(timeCache.get(adversarioId));
                 partida.setFase(fase);
                 partida.setRodada(proximaRodada);
                 partida.setStatus(StatusPartida.PENDENTE);
+                partida.setIdentificadorBracket("S-R" + proximaRodada + "-" + (novasPartidas.size() + 1));
                 novasPartidas.add(partida);
 
-                timesJaPareados.add(time);
-                timesJaPareados.add(adversario);
-                confrontosJaRealizados.add(gerarChaveConfronto(time, adversario));
+                System.out.println("Gerada partida Suico: " + timeId + " vs " + adversarioId);
+
+                timesJaPareados.add(timeId);
+                timesJaPareados.add(adversarioId);
+                confrontosJaRealizados.add(gerarChaveConfronto(timeId, adversarioId));
+            } else {
+                // BYE (Folga)
+                // Se sobrou um time sem adversário válido (ex: ímpar ou incompatibilidade
+                // total)
+                // Na regra suíça, ele recebe um "Bye".
+                // Geramos uma partida finalizada com vitória para ele.
+                // Mas para não quebrar fluxo, vamos deixar pendente com Time2 null ou tratar
+                // como vitória auto.
+                // Simplificação: Partida Pendente com Time2 = null (Frontend deve tratar) ou
+                // Finalizada.
+                // Vou criar como Finalizada para ele ganhar os pontos.
+
+                System.out.println("Gerando BYE para time: " + timeId);
+                Partida bye = new Partida();
+                bye.setTime1(timeCache.get(timeId));
+                bye.setTime2(null); // Bye
+                bye.setFase(fase);
+                bye.setRodada(proximaRodada);
+                bye.setStatus(StatusPartida.FINALIZADA);
+                bye.setPlacarTime1(1); // 1x0 simbólico ou W.O
+                bye.setPlacarTime2(0);
+                bye.setVencedor(timeCache.get(timeId)); // Define vencedor
+                bye.setIdentificadorBracket("S-R" + proximaRodada + "-BYE");
+                novasPartidas.add(bye);
+
+                timesJaPareados.add(timeId);
             }
         }
 
+        System.out.println("Total partidas geradas para rodada " + proximaRodada + ": " + novasPartidas.size());
         return novasPartidas;
     }
 
-    private Time encontrarAdversario(Time time, List<Time> timesOrdenados,
-            Map<Time, Integer> pontuacoes, Set<String> confrontosRealizados,
-            Set<Time> timesJaPareados) {
+    private Long encontrarAdversario(Long timeId, List<Long> timesOrdenados,
+            Map<Long, Integer> pontuacoes, Set<String> confrontosRealizados,
+            Set<Long> timesJaPareados) {
 
-        int pontuacaoTime = pontuacoes.getOrDefault(time, 0);
+        int pontuacaoTime = pontuacoes.getOrDefault(timeId, 0);
 
         // Prioriza times com pontuação similar
         return timesOrdenados.stream()
-                .filter(t -> !t.equals(time))
-                .filter(t -> !timesJaPareados.contains(t))
-                .filter(t -> !confrontosRealizados.contains(gerarChaveConfronto(time, t)))
-                .min(Comparator.comparingInt(t -> Math.abs(pontuacoes.getOrDefault(t, 0) - pontuacaoTime)))
+                .filter(tId -> !tId.equals(timeId))
+                .filter(tId -> !timesJaPareados.contains(tId))
+                .filter(tId -> !confrontosRealizados.contains(gerarChaveConfronto(timeId, tId)))
+                .min(Comparator.comparingInt(tId -> Math.abs(pontuacoes.getOrDefault(tId, 0) - pontuacaoTime)))
                 .orElse(null);
     }
 
-    private Map<Time, Integer> calcularPontuacoes(Fase fase) {
-        Map<Time, Integer> pontuacoes = new HashMap<>();
+    private Map<Long, Integer> calcularPontuacoes(List<Partida> partidas) {
+        Map<Long, Integer> pontuacoes = new HashMap<>();
 
-        for (Partida partida : fase.getPartidas()) {
+        for (Partida partida : partidas) {
             if (!partida.isFinalizada())
                 continue;
 
-            pontuacoes.putIfAbsent(partida.getTime1(), 0);
-            pontuacoes.putIfAbsent(partida.getTime2(), 0);
+            Long t1 = partida.getTime1().getId();
+            Long t2 = (partida.getTime2() != null) ? partida.getTime2().getId() : null;
+
+            pontuacoes.putIfAbsent(t1, 0);
+            if (t2 != null)
+                pontuacoes.putIfAbsent(t2, 0);
 
             if (partida.getVencedor() != null) {
-                pontuacoes.merge(partida.getVencedor(), 3, Integer::sum);
+                Long v = partida.getVencedor().getId();
+                pontuacoes.merge(v, 3, Integer::sum);
             } else {
-                pontuacoes.merge(partida.getTime1(), 1, Integer::sum);
-                pontuacoes.merge(partida.getTime2(), 1, Integer::sum);
+                // Empate? Suíço normalmente não tem empate puro sem pontos, mas se 1-1:
+                // Vou assumir 1 ponto cada
+                pontuacoes.merge(t1, 1, Integer::sum);
+                if (t2 != null)
+                    pontuacoes.merge(t2, 1, Integer::sum);
             }
         }
 
         return pontuacoes;
     }
 
-    private Set<String> getConfrontosRealizados(Fase fase) {
+    private Set<String> getConfrontosRealizados(List<Partida> partidas) {
         Set<String> confrontos = new HashSet<>();
-        for (Partida partida : fase.getPartidas()) {
-            confrontos.add(gerarChaveConfronto(partida.getTime1(), partida.getTime2()));
+        for (Partida partida : partidas) {
+            String chave = gerarChaveConfronto(partida.getTime1().getId(),
+                    partida.getTime2() != null ? partida.getTime2().getId() : -1L);
+            confrontos.add(chave);
         }
         return confrontos;
+    }
+
+    // Método auxiliar para chave com IDs
+    private String gerarChaveConfronto(Long id1, Long id2) {
+        if (id1 == null || id2 == null || id2 == -1L)
+            return "BYE"; // -1L para indicar bye
+        return id1 < id2 ? id1 + "-" + id2 : id2 + "-" + id1;
     }
 
     private String gerarChaveConfronto(Time t1, Time t2) {
@@ -142,15 +216,26 @@ public class SistemaSuicoStrategy implements GeradorDeConfrontos {
 
     @Override
     public List<Time> calcularClassificados(Fase fase) {
-        Map<Time, Integer> pontuacoes = calcularPontuacoes(fase);
+        // Usa a lista de partidas da fase (pode vir lazy, mas dentro de transação
+        // funciona)
+        List<Partida> partidas = fase.getPartidas();
+        Map<Long, Integer> pontuacoesId = calcularPontuacoes(partidas);
+
+        // Mapeia de volta para objetos Time para retorno
+        // (Isso assume que fase.getCampeonato().getTimesParticipantes() conteem os
+        // times)
+        Map<Long, Time> timeMap = new HashMap<>();
+        fase.getCampeonato().getTimesParticipantes().forEach(t -> timeMap.put(t.getId(), t));
+
         int classificados = fase.getClassificadosNecessarios() != null
                 ? fase.getClassificadosNecessarios()
-                : pontuacoes.size() / 2;
+                : pontuacoesId.size() / 2;
 
-        return pontuacoes.entrySet().stream()
-                .sorted(Map.Entry.<Time, Integer>comparingByValue().reversed())
+        return pontuacoesId.entrySet().stream()
+                .sorted(Map.Entry.<Long, Integer>comparingByValue().reversed())
                 .limit(classificados)
-                .map(Map.Entry::getKey)
+                .map(e -> timeMap.get(e.getKey())) // Retorna o objeto Time
+                .filter(Objects::nonNull)
                 .collect(Collectors.toList());
     }
 
