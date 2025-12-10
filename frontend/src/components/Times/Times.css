@@ -1,0 +1,52 @@
+.times-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+    gap: 24px;
+    margin-bottom: 48px;
+}
+
+.time-card {
+    background: var(--bg-card);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    border-radius: var(--border-radius-lg);
+    overflow: hidden;
+    transition: var(--transition);
+    cursor: pointer;
+}
+
+.time-card:hover {
+    transform: translateY(-8px);
+    border-color: rgba(139, 92, 246, 0.3);
+    box-shadow: var(--shadow-glow);
+}
+
+.time-card-image {
+    aspect-ratio: 16/10;
+    overflow: hidden;
+    padding: 8px;
+}
+
+.time-card-content {
+    padding: 24px;
+}
+
+.time-name {
+    font-family: 'Orbitron', sans-serif;
+    font-size: 1.125rem;
+    margin-bottom: 8px;
+}
+
+.time-titles {
+    color: var(--accent);
+    font-size: 0.875rem;
+    margin-bottom: 12px;
+}
+
+.time-players {
+    font-size: 0.875rem;
+    color: var(--text-muted);
+}
+
+.times-cta {
+    text-align: center;
+}

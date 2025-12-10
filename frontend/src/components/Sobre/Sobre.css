@@ -1,0 +1,40 @@
+.sobre {
+    background: var(--bg-darker);
+}
+
+.sobre-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 32px;
+}
+
+.sobre-card {
+    background: var(--bg-card);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    border-radius: var(--border-radius-lg);
+    padding: 40px;
+    text-align: center;
+    transition: var(--transition);
+}
+
+.sobre-card:hover {
+    background: var(--bg-card-hover);
+    transform: translateY(-8px);
+    border-color: rgba(139, 92, 246, 0.3);
+    box-shadow: var(--shadow-glow);
+}
+
+.sobre-icon {
+    font-size: 3rem;
+    margin-bottom: 20px;
+}
+
+.sobre-card h3 {
+    font-family: 'Orbitron', sans-serif;
+    font-size: 1.25rem;
+    margin-bottom: 12px;
+}
+
+.sobre-card p {
+    color: var(--text-secondary);
+}

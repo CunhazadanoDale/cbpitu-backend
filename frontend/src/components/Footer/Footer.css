@@ -1,0 +1,74 @@
+.footer {
+    background: var(--bg-darker);
+    padding: 60px 0 24px;
+    border-top: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.footer-content {
+    display: flex;
+    justify-content: space-between;
+    gap: 48px;
+    margin-bottom: 48px;
+    flex-wrap: wrap;
+}
+
+.footer-brand .logo-text {
+    font-family: 'Orbitron', sans-serif;
+    font-size: 1.75rem;
+    font-weight: 900;
+    letter-spacing: 2px;
+}
+
+.footer-brand .logo-highlight {
+    color: var(--primary);
+}
+
+.footer-brand p {
+    color: var(--text-muted);
+    margin-top: 12px;
+    max-width: 250px;
+}
+
+.footer-links {
+    display: flex;
+    gap: 80px;
+}
+
+.footer-column h4 {
+    font-family: 'Orbitron', sans-serif;
+    font-size: 0.875rem;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    margin-bottom: 20px;
+    color: var(--text-primary);
+}
+
+.footer-column a {
+    display: block;
+    color: var(--text-muted);
+    margin-bottom: 12px;
+}
+
+.footer-column a:hover {
+    color: var(--primary-light);
+}
+
+.footer-bottom {
+    padding-top: 24px;
+    border-top: 1px solid rgba(255, 255, 255, 0.05);
+    text-align: center;
+    color: var(--text-muted);
+    font-size: 0.875rem;
+}
+
+@media (max-width: 768px) {
+    .footer-content {
+        flex-direction: column;
+        text-align: center;
+    }
+
+    .footer-links {
+        justify-content: center;
+        gap: 48px;
+    }
+}
