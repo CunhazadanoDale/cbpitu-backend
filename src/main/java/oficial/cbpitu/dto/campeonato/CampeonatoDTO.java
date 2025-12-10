@@ -22,6 +22,7 @@ public class CampeonatoDTO {
     private StatusCampeonato status;
     private Integer limiteMaximoTimes;
     private Integer numeroTimesInscritos;
+    private List<TimeResumoDTO> timesParticipantes;
     private List<FaseDTO> fases;
     private TimeResumoDTO campeao;
 }

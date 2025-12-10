@@ -6,6 +6,7 @@ import oficial.cbpitu.dto.campeonato.CriarCampeonatoDTO;
 import oficial.cbpitu.model.Campeonato;
 import org.springframework.stereotype.Component;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -32,6 +33,7 @@ public class CampeonatoMapper {
                 .status(campeonato.getStatus())
                 .limiteMaximoTimes(campeonato.getLimiteMaximoTimes())
                 .numeroTimesInscritos(campeonato.getNumeroTimesInscritos())
+                .timesParticipantes(timeMapper.toResumoDTOList(new ArrayList<>(campeonato.getTimesParticipantes())))
                 .fases(faseMapper.toDTOList(campeonato.getFases()))
                 .campeao(timeMapper.toResumoDTO(campeonato.getCampeao()))
                 .build();
