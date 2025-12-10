@@ -22,6 +22,7 @@ public class PartidaService {
 
     private final PartidaRepository partidaRepository;
     private final TimeRepository timeRepository;
+    private final CampeonatoService campeonatoService;
 
     public List<Partida> listarTodas() {
         return partidaRepository.findAll();
@@ -95,7 +96,10 @@ public class PartidaService {
 
         partida.registrarResultado(placarTime1, placarTime2);
 
-        return partidaRepository.save(partida);
+        Partida salva = partidaRepository.save(partida);
+        campeonatoService.verificarEProcessarAvanco(salva.getFase().getId(), salva);
+
+        return salva;
     }
 
     @Transactional
@@ -108,7 +112,10 @@ public class PartidaService {
 
         partida.registrarResultadoSerie(vitoriasTime1, vitoriasTime2);
 
-        return partidaRepository.save(partida);
+        Partida salva = partidaRepository.save(partida);
+        campeonatoService.verificarEProcessarAvanco(salva.getFase().getId(), salva);
+
+        return salva;
     }
 
     @Transactional
@@ -133,7 +140,10 @@ public class PartidaService {
             partida.setPlacarTime2(3);
         }
 
-        return partidaRepository.save(partida);
+        Partida salva = partidaRepository.save(partida);
+        campeonatoService.verificarEProcessarAvanco(salva.getFase().getId(), salva);
+
+        return salva;
     }
 
     // Alterações de status
@@ -179,7 +189,10 @@ public class PartidaService {
             partida.setVencedor(null);
         }
 
-        return partidaRepository.save(partida);
+        Partida salva = partidaRepository.save(partida);
+        campeonatoService.verificarEProcessarAvanco(salva.getFase().getId(), salva);
+
+        return salva;
     }
 
     // Consultas

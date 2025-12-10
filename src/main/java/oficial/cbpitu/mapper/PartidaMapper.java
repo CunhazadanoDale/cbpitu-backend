@@ -23,6 +23,8 @@ public class PartidaMapper {
 
         return PartidaDTO.builder()
                 .id(partida.getId())
+                .faseId(partida.getFase() != null ? partida.getFase().getId() : null)
+                .grupoId(partida.getGrupo() != null ? partida.getGrupo().getId() : null)
                 .time1(timeMapper.toResumoDTO(partida.getTime1()))
                 .time2(timeMapper.toResumoDTO(partida.getTime2()))
                 .placarTime1(partida.getPlacarTime1())

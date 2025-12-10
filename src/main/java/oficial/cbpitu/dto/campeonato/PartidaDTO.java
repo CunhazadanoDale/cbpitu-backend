@@ -14,6 +14,8 @@ import java.time.LocalDateTime;
 public class PartidaDTO {
 
     private Long id;
+    private Long faseId;
+    private Long grupoId;
     private TimeResumoDTO time1;
     private TimeResumoDTO time2;
     private Integer placarTime1;
