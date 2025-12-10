@@ -415,7 +415,10 @@ public class CampeonatoService {
         Long total = partidaRepository.countByFaseId(faseAtual.getId());
         Long finalizadas = partidaRepository.countFinalizadasByFaseId(faseAtual.getId());
 
+        System.out.println("Avancar Fase: Total Partidas=" + total + ", Finalizadas=" + finalizadas);
+
         if (!total.equals(finalizadas)) {
+            System.err.println("Impossível avançar: Partidas pendentes.");
             throw new OperacaoInvalidaException(
                     String.format("Ainda há %d partidas pendentes nesta fase", total - finalizadas));
         }
@@ -423,6 +426,7 @@ public class CampeonatoService {
         // Calcula classificados
         GeradorDeConfrontos strategy = getStrategy(faseAtual.getFormato());
         List<Time> classificados = strategy.calcularClassificados(faseAtual);
+        System.out.println("Classificados calculados: " + classificados.size());
 
         // Marca fase como finalizada
         faseAtual.setFinalizada(true);
@@ -435,8 +439,10 @@ public class CampeonatoService {
 
         if (proximaFaseOpt.isPresent()) {
             Fase proximaFase = proximaFaseOpt.get();
+            System.out.println("Gerando confrontos para próxima fase: " + proximaFase.getNome());
             gerarConfrontosDaFase(proximaFase, classificados);
         } else {
+            System.out.println("Sem próxima fase. Finalizando campeonato.");
             // Campeonato finalizado - determina campeão
             if (!classificados.isEmpty()) {
                 campeonato.setCampeao(classificados.get(0));

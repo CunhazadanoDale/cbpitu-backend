@@ -3,6 +3,8 @@ package oficial.cbpitu.service.strategy;
 import oficial.cbpitu.model.*;
 import oficial.cbpitu.model.enums.FormatoCompeticao;
 import oficial.cbpitu.model.enums.StatusPartida;
+import oficial.cbpitu.repository.PartidaRepository;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 import java.util.*;
@@ -12,9 +14,12 @@ import java.util.stream.Collectors;
  * Strategy para formato Fase de Grupos.
  */
 @Component
+@lombok.RequiredArgsConstructor
 public class FaseDeGruposStrategy implements GeradorDeConfrontos {
 
     private static final int TIMES_POR_GRUPO_PADRAO = 4;
+
+    private final PartidaRepository partidaRepository;
 
     @Override
     public List<Partida> gerarConfrontos(List<Time> times, Fase fase) {
@@ -120,12 +125,23 @@ public class FaseDeGruposStrategy implements GeradorDeConfrontos {
     @Override
     public List<Time> calcularClassificados(Fase fase) {
         List<Time> classificados = new ArrayList<>();
+
+        // Calcula quantos classificados por grupo
+        // Se a divisão der 0 (ex: 1 vaga / 2 grupos), assume o padrão de 2 por grupo
         int classificadosPorGrupo = fase.getClassificadosNecessarios() != null
                 ? fase.getClassificadosNecessarios() / fase.getGrupos().size()
                 : 2;
 
+        if (classificadosPorGrupo < 1) {
+            classificadosPorGrupo = 2;
+        }
+
+        if (fase.getGrupos() == null)
+            return classificados;
+
         for (Grupo grupo : fase.getGrupos()) {
-            List<ClassificacaoGrupo> tabela = calcularTabelaGrupo(grupo);
+            List<Partida> partidasDoGrupo = partidaRepository.findByGrupoId(grupo.getId());
+            List<ClassificacaoGrupo> tabela = calcularTabelaGrupo(grupo, partidasDoGrupo);
 
             // Pega os N melhores de cada grupo
             for (int i = 0; i < Math.min(classificadosPorGrupo, tabela.size()); i++) {
@@ -139,7 +155,7 @@ public class FaseDeGruposStrategy implements GeradorDeConfrontos {
     /**
      * Calcula a tabela de classificação de um grupo.
      */
-    public List<ClassificacaoGrupo> calcularTabelaGrupo(Grupo grupo) {
+    public List<ClassificacaoGrupo> calcularTabelaGrupo(Grupo grupo, List<Partida> partidasDoGrupo) {
         Map<Time, ClassificacaoGrupo> classificacoes = new HashMap<>();
 
         // Inicializa classificação para cada time
@@ -148,7 +164,7 @@ public class FaseDeGruposStrategy implements GeradorDeConfrontos {
         }
 
         // Processa cada partida finalizada
-        for (Partida partida : grupo.getPartidas()) {
+        for (Partida partida : partidasDoGrupo) {
             if (!partida.isFinalizada())
                 continue;
 

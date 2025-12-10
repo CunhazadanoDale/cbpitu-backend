@@ -17,6 +17,7 @@ public class GrupoMapper {
 
     private final TimeMapper timeMapper;
     private final oficial.cbpitu.service.strategy.FaseDeGruposStrategy faseDeGruposStrategy;
+    private final oficial.cbpitu.repository.PartidaRepository partidaRepository;
 
     public GrupoDTO toDTO(Grupo grupo) {
         if (grupo == null)
@@ -28,7 +29,8 @@ public class GrupoMapper {
                 .times(grupo.getTimes().stream()
                         .map(timeMapper::toResumoDTO)
                         .collect(Collectors.toList()))
-                .classificacao(toClassificacaoDTOList(faseDeGruposStrategy.calcularTabelaGrupo(grupo)))
+                .classificacao(toClassificacaoDTOList(faseDeGruposStrategy.calcularTabelaGrupo(grupo,
+                        partidaRepository.findByGrupoId(grupo.getId()))))
                 .build();
     }
 

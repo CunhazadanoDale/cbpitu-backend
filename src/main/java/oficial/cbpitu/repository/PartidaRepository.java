@@ -33,7 +33,7 @@ public interface PartidaRepository extends JpaRepository<Partida, Long> {
     @Query("SELECT p FROM Partida p WHERE p.fase.campeonato.id = :campeonatoId AND (p.time1.id = :timeId OR p.time2.id = :timeId)")
     List<Partida> findByCampeonatoIdAndTimeId(Long campeonatoId, Long timeId);
 
-    @Query("SELECT COUNT(p) FROM Partida p WHERE p.fase.id = :faseId AND p.status = 'FINALIZADA'")
+    @Query("SELECT COUNT(p) FROM Partida p WHERE p.fase.id = :faseId AND (p.status = 'FINALIZADA' OR p.status = 'WO')")
     Long countFinalizadasByFaseId(Long faseId);
 
     @Query("SELECT COUNT(p) FROM Partida p WHERE p.fase.id = :faseId")

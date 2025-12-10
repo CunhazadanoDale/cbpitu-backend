@@ -17,6 +17,7 @@ public class ClassificacaoService {
 
     private final GrupoRepository grupoRepository;
     private final FaseDeGruposStrategy faseDeGruposStrategy;
+    private final oficial.cbpitu.repository.PartidaRepository partidaRepository;
 
     /**
      * Retorna a tabela de classificação de um grupo.
@@ -25,7 +26,7 @@ public class ClassificacaoService {
         Grupo grupo = grupoRepository.findById(grupoId)
                 .orElseThrow(() -> new RuntimeException("Grupo não encontrado: " + grupoId));
 
-        return faseDeGruposStrategy.calcularTabelaGrupo(grupo);
+        return faseDeGruposStrategy.calcularTabelaGrupo(grupo, partidaRepository.findByGrupoId(grupoId));
     }
 
     /**
@@ -62,7 +63,7 @@ public class ClassificacaoService {
         List<Grupo> grupos = grupoRepository.findByFaseIdOrderByNomeAsc(faseId);
 
         return grupos.stream()
-                .map(faseDeGruposStrategy::calcularTabelaGrupo)
+                .map(g -> faseDeGruposStrategy.calcularTabelaGrupo(g, partidaRepository.findByGrupoId(g.getId())))
                 .toList();
     }
 }
