@@ -302,98 +302,253 @@ public class CampeonatoService {
 
     private void processarAvancoLoserBracket(Fase fase, Partida partidaRecente) {
         int rodada = partidaRecente.getRodada();
-        boolean isWinnersBox = rodada < 100;
+        String identificador = partidaRecente.getIdentificadorBracket();
+        
+        System.out.println("=== processarAvancoLoserBracket ===");
+        System.out.println("Rodada: " + rodada + ", Identificador: " + identificador);
 
-        if (isWinnersBox) {
-            // ---> FLUXO WINNERS BRACKET
-            List<Partida> partidasWB = partidaRepository.findByFaseIdAndRodada(fase.getId(), rodada);
-            boolean wbFinalizada = partidasWB.stream().allMatch(this::isFinalizada);
-
-            if (wbFinalizada) {
-                List<Time> vencedoresWB = partidasWB.stream().map(Partida::getVencedor).toList();
-                List<Time> perdedoresWB = partidasWB.stream().map(Partida::getPerdedor).toList();
-
-                // 1. Gera próxima rodada WB (se houver + de 2 times)
-                if (vencedoresWB.size() >= 2) {
-                    List<Partida> proxWB = loserBracketStrategy.gerarProximaRodadaWinners(fase, vencedoresWB, rodada);
-                    partidaRepository.saveAll(proxWB);
-                } else if (vencedoresWB.size() == 1) {
-                    // Chegou na final da WB. O vencedor espera o vencedor da LB na Grand Finals.
-                    // (Logica de GF pode ser checada aqui ou no fluxo LB)
+        // GRAND FINALS
+        if (rodada == 0 || (identificador != null && identificador.startsWith("GF"))) {
+            // Check if GF-RESET is needed
+            if (identificador != null && identificador.equals("GF") && partidaRecente.isFinalizada()) {
+                Time vencedor = partidaRecente.getVencedor();
+                Time vencedorWB = partidaRecente.getTime1(); // WB winner is always time1
+                
+                if (!vencedor.equals(vencedorWB)) {
+                    // LB winner beat WB winner - need reset!
+                    System.out.println("LB winner ganhou GF - Gerando RESET");
+                    Partida reset = loserBracketStrategy.gerarGrandFinalsReset(fase, 
+                            partidaRecente.getTime1(), partidaRecente.getTime2());
+                    partidaRepository.save(reset);
                 }
-
-                // 2. DROP PARA LOSERS BRACKET
-                // Mapeamento: WB R1 -> LB R1; WB R2 -> LB R2; WB R3 -> LB R4; WB R4 -> LB R6...
-                int targetRodadaLB = (rodada == 1) ? 1 : (rodada - 1) * 2;
-
-                // Verifica se precisa de winners do LB anterior
-                boolean precisaDeLB = (rodada > 1);
-                List<Time> vencedoresLBAnterior = new ArrayList<>();
-
-                if (precisaDeLB) {
-                    // LB R(target-1) // Ex: WB R2 cai em LB R2. Precisa de winners de LB R1
-                    int rodadaLBAnterior = 100 + (targetRodadaLB - 1);
-                    List<Partida> partidasLBAnt = partidaRepository.findByFaseIdAndRodada(fase.getId(),
-                            rodadaLBAnterior);
-                    if (partidasLBAnt.stream().allMatch(this::isFinalizada)) {
-                        vencedoresLBAnterior = partidasLBAnt.stream().map(Partida::getVencedor).toList();
-                    } else {
-                        // LB ainda não acabou, não gera nada agora. O gatilho virá do LB.
-                        return;
-                    }
-                }
-
-                // Gera rodada LB
-                List<Partida> proxLB = loserBracketStrategy.gerarRodadaLosers(fase, perdedoresWB, vencedoresLBAnterior,
-                        targetRodadaLB);
-                partidaRepository.saveAll(proxLB);
             }
+            return;
+        }
 
+        // LOSERS BRACKET (rodada >= 100)
+        if (rodada >= 100) {
+            processarAvancoLB(fase, partidaRecente);
+            return;
+        }
+
+        // WINNERS BRACKET (rodada < 100)
+        processarAvancoWB(fase, partidaRecente);
+    }
+
+    private void processarAvancoWB(Fase fase, Partida partidaRecente) {
+        int rodada = partidaRecente.getRodada();
+        List<Partida> partidasWB = partidaRepository.findByFaseIdAndRodada(fase.getId(), rodada);
+        
+        if (!partidasWB.stream().allMatch(this::isFinalizada)) {
+            System.out.println("WB Rodada " + rodada + " ainda não finalizada");
+            return;
+        }
+
+        List<Time> vencedoresWB = partidasWB.stream().map(Partida::getVencedor).toList();
+        List<Time> perdedoresWB = partidasWB.stream().map(Partida::getPerdedor).toList();
+        
+        System.out.println("WB R" + rodada + " finalizada. Vencedores: " + vencedoresWB.size() + ", Perdedores: " + perdedoresWB.size());
+
+        // Calcula número total de rodadas WB baseado no tamanho inicial
+        int numTimesTotal = calcularNumTimesInicial(fase);
+        int totalRodadasWB = calcularTotalRodadasWB(numTimesTotal);
+        int rodadaAtualWB = totalRodadasWB - rodada + 1; // Converte para 1-indexed
+
+        System.out.println("Total times: " + numTimesTotal + ", Total rodadas WB: " + totalRodadasWB);
+        System.out.println("Rodada atual WB (1-indexed): " + rodadaAtualWB);
+
+        boolean isWBFinal = (rodada == 1);
+
+        // 1. Avança vencedores no WB (se não for final)
+        if (!isWBFinal && vencedoresWB.size() >= 2) {
+            List<Partida> proxWB = loserBracketStrategy.gerarProximaRodadaWinners(fase, vencedoresWB, rodada);
+            partidaRepository.saveAll(proxWB);
+            System.out.println("Geradas " + proxWB.size() + " partidas para WB R" + (rodada - 1));
+        }
+
+        // 2. Processa perdedores para o LB
+        if (rodadaAtualWB == 1) {
+            // Primeira rodada WB - perdedores vão para LB R1
+            // Verifica se LB R1 já existe
+            List<Partida> lbR1Existente = partidaRepository.findByFaseIdAndRodada(fase.getId(), 101);
+            if (lbR1Existente.isEmpty()) {
+                List<Partida> lbR1 = loserBracketStrategy.gerarRodadaLosers(fase, null, perdedoresWB, 1);
+                partidaRepository.saveAll(lbR1);
+                System.out.println("Geradas " + lbR1.size() + " partidas para LB R1");
+            }
+        } else if (isWBFinal) {
+            // WB Final - perdedor vai para LB Final enfrentar vencedor do LB
+            Time perdedorWBFinal = perdedoresWB.get(0);
+            Time vencedorWB = vencedoresWB.get(0);
+            
+            // Calcula qual é a última rodada do LB
+            int lbFinalRodada = calcularLBFinalRodada(numTimesTotal);
+            
+            // Verifica se o LB está pronto (vencedor do LB)
+            List<Partida> partidasLBAnterior = partidaRepository.findByFaseIdAndRodada(fase.getId(), 100 + lbFinalRodada - 1);
+            
+            if (!partidasLBAnterior.isEmpty() && partidasLBAnterior.stream().allMatch(this::isFinalizada)) {
+                Time vencedorLB = partidasLBAnterior.get(0).getVencedor();
+                
+                // Gera LB Final
+                List<Partida> lbFinal = loserBracketStrategy.gerarRodadaLosers(fase, 
+                        List.of(perdedorWBFinal), List.of(vencedorLB), lbFinalRodada);
+                partidaRepository.saveAll(lbFinal);
+                System.out.println("Gerada LB Final (R" + lbFinalRodada + ")");
+            } else {
+                // LB ainda não está pronto - o gatilho virá do LB
+                System.out.println("LB ainda não finalizado, aguardando...");
+            }
+            
+            // Guarda o vencedor WB para Grand Finals (será resgatado depois)
         } else {
-            // ---> FLUXO LOSERS BRACKET
-            List<Partida> partidasLB = partidaRepository.findByFaseIdAndRodada(fase.getId(), rodada);
-            boolean lbFinalizada = partidasLB.stream().allMatch(this::isFinalizada);
+            // Rodadas intermediárias WB - perdedores caem para rodada LB correspondente
+            // Para 8 times: WB R2 perdedores -> LB R2 (enfrentam winners LB R1)
+            int targetLBRodada = rodadaAtualWB; // Simplificado para este caso
+            
+            // Verifica se LB anterior está finalizado
+            List<Partida> lbAnterior = partidaRepository.findByFaseIdAndRodada(fase.getId(), 100 + targetLBRodada - 1);
+            
+            if (!lbAnterior.isEmpty() && lbAnterior.stream().allMatch(this::isFinalizada)) {
+                List<Time> vencedoresLB = lbAnterior.stream().map(Partida::getVencedor).toList();
+                List<Partida> proxLB = loserBracketStrategy.gerarRodadaLosers(fase, perdedoresWB, vencedoresLB, targetLBRodada);
+                partidaRepository.saveAll(proxLB);
+                System.out.println("Geradas " + proxLB.size() + " partidas para LB R" + targetLBRodada);
+            }
+        }
+    }
 
-            if (lbFinalizada) {
-                List<Time> vencedoresLB = partidasLB.stream().map(Partida::getVencedor).toList();
-                int rodadaAtualLB = rodada - 100;
-                int proximaRodadaLB = rodadaAtualLB + 1;
+    private void processarAvancoLB(Fase fase, Partida partidaRecente) {
+        int rodada = partidaRecente.getRodada();
+        int rodadaLB = rodada - 100;
+        
+        List<Partida> partidasLB = partidaRepository.findByFaseIdAndRodada(fase.getId(), rodada);
+        
+        if (!partidasLB.stream().allMatch(this::isFinalizada)) {
+            System.out.println("LB Rodada " + rodadaLB + " ainda não finalizada");
+            return;
+        }
 
-                // Verifica se a próxima rodada é uma "Drop Round" (par) ou "Advance Round"
-                // (ímpar)
-                // Na nossa lógica simplificada:
-                // LB R1 (vem do WB R1) -> Prox é LB R2 (recebe WB R2)
-                // LB R2 (mistura) -> Prox é LB R3 (só vencedores de LB R2)
-                // LB R3 (só winners) -> Prox é LB R4 (recebe WB R3)
+        List<Time> vencedoresLB = partidasLB.stream().map(Partida::getVencedor).toList();
+        System.out.println("LB R" + rodadaLB + " finalizada. Vencedores: " + vencedoresLB.size());
 
-                boolean isProximaDropRound = (proximaRodadaLB % 2 == 0);
+        int numTimesTotal = calcularNumTimesInicial(fase);
+        int lbFinalRodada = calcularLBFinalRodada(numTimesTotal);
 
-                if (isProximaDropRound) {
-                    // Precisa esperar os perdedores da WB correspondente
-                    // LB R2 precisa de WB R2. LB R4 precisa de WB R3.
-                    int rodadaWBCorrespondente = (proximaRodadaLB / 2) + 1;
+        // Verifica se é a LB Final
+        if (rodadaLB == lbFinalRodada) {
+            // LB Final acabou - gera Grand Finals
+            Time vencedorLB = vencedoresLB.get(0);
+            
+            // Busca vencedor do WB Final
+            List<Partida> wbFinal = partidaRepository.findByFaseIdAndRodada(fase.getId(), 1);
+            if (!wbFinal.isEmpty() && wbFinal.get(0).isFinalizada()) {
+                Time vencedorWB = wbFinal.get(0).getVencedor();
+                
+                // Verifica se GF já existe
+                List<Partida> gfExistentes = partidaRepository.findByFaseIdAndRodada(fase.getId(), 0);
+                if (gfExistentes.isEmpty()) {
+                    Partida grandFinals = loserBracketStrategy.gerarGrandFinals(fase, vencedorWB, vencedorLB);
+                    partidaRepository.save(grandFinals);
+                    System.out.println("Gerada Grand Finals!");
+                }
+            }
+            return;
+        }
 
-                    List<Partida> partidasWB = partidaRepository.findByFaseIdAndRodada(fase.getId(),
-                            rodadaWBCorrespondente);
-                    if (partidasWB.stream().allMatch(this::isFinalizada)) {
-                        List<Time> perdedoresWB = partidasWB.stream().map(Partida::getPerdedor).toList();
-                        List<Partida> proxLB = loserBracketStrategy.gerarRodadaLosers(fase, perdedoresWB, vencedoresLB,
-                                proximaRodadaLB);
-                        partidaRepository.saveAll(proxLB);
-                    }
-                    // Se WB não acabou, espera.
-
-                } else {
-                    // Próxima é ímpar (ex: LB R3). Só vencedores daqui avançam entre si.
-                    // Ou se for a final da LB...
-                    // TODO: Verificar se é final da LB
-
-                    List<Partida> proxLB = loserBracketStrategy.gerarRodadaLosers(fase, null, vencedoresLB,
-                            proximaRodadaLB);
+        // Verifica se precisa aguardar perdedores do WB
+        int proximaLBRodada = rodadaLB + 1;
+        
+        // Para 4 times: LB R1 -> LB R2 (Final) que precisa do perdedor WB Final
+        // Para 8 times: LB R1 -> LB R2 (precisa perdedores WB R2)
+        
+        if (proximaLBRodada == lbFinalRodada) {
+            // Próxima é a LB Final - precisa do perdedor da WB Final
+            List<Partida> wbFinal = partidaRepository.findByFaseIdAndRodada(fase.getId(), 1);
+            
+            if (!wbFinal.isEmpty() && wbFinal.stream().allMatch(this::isFinalizada)) {
+                List<Time> perdedoresWBFinal = wbFinal.stream().map(Partida::getPerdedor).toList();
+                List<Partida> lbFinal = loserBracketStrategy.gerarRodadaLosers(fase, 
+                        perdedoresWBFinal, vencedoresLB, proximaLBRodada);
+                partidaRepository.saveAll(lbFinal);
+                System.out.println("Gerada LB Final (R" + proximaLBRodada + ")");
+            } else {
+                System.out.println("Aguardando WB Final terminar...");
+            }
+        } else {
+            // Rodada intermediária - verifica se há perdedores WB para misturar
+            // Para 8 times, LB R2 recebe perdedores de WB R2
+            int wbRodadaCorrespondente = calcularWBRodadaParaLB(numTimesTotal, proximaLBRodada);
+            
+            if (wbRodadaCorrespondente > 0) {
+                List<Partida> wbCorrespondente = partidaRepository.findByFaseIdAndRodada(fase.getId(), wbRodadaCorrespondente);
+                
+                if (!wbCorrespondente.isEmpty() && wbCorrespondente.stream().allMatch(this::isFinalizada)) {
+                    List<Time> perdedoresWB = wbCorrespondente.stream().map(Partida::getPerdedor).toList();
+                    List<Partida> proxLB = loserBracketStrategy.gerarRodadaLosers(fase, 
+                            perdedoresWB, vencedoresLB, proximaLBRodada);
                     partidaRepository.saveAll(proxLB);
+                    System.out.println("Geradas " + proxLB.size() + " partidas para LB R" + proximaLBRodada);
+                }
+            } else {
+                // Só vencedores LB avançam entre si
+                if (vencedoresLB.size() >= 2) {
+                    List<Partida> proxLB = loserBracketStrategy.gerarRodadaLosers(fase, 
+                            null, vencedoresLB, proximaLBRodada);
+                    partidaRepository.saveAll(proxLB);
+                    System.out.println("Geradas " + proxLB.size() + " partidas para LB R" + proximaLBRodada);
                 }
             }
         }
+    }
+
+    // Helpers para Double Elimination
+    private int calcularNumTimesInicial(Fase fase) {
+        // Pega da contagem de times do campeonato
+        return fase.getCampeonato().getTimesParticipantes().size();
+    }
+
+    private int calcularTotalRodadasWB(int numTimes) {
+        // 4 times = 2 rodadas WB (R2, R1=Final)
+        // 8 times = 3 rodadas WB (R3, R2, R1=Final)
+        return (int) (Math.log(numTimes) / Math.log(2));
+    }
+
+    private int calcularLBFinalRodada(int numTimes) {
+        // 4 times: LB Final = R2
+        // 8 times: LB Final = R4
+        // Fórmula: 2 * (rodadas WB - 1)
+        int rodadasWB = calcularTotalRodadasWB(numTimes);
+        return Math.max(2, 2 * (rodadasWB - 1));
+    }
+
+    private int calcularWBRodadaParaLB(int numTimes, int lbRodada) {
+        // Retorna qual rodada WB alimenta perdedores para a LB rodada especificada
+        // Para 8 times:
+        //   LB R1 <- WB R3 perdedores (primeira rodada)
+        //   LB R2 <- WB R2 perdedores + LB R1 winners
+        //   LB R3 <- só LB R2 winners (rodada de redução)
+        //   LB R4 <- WB R1 (final) perdedor + LB R3 winner
+        
+        int rodadasWB = calcularTotalRodadasWB(numTimes);
+        
+        // Para 4 times (2 rodadas WB):
+        //   LB R1 <- WB R2 perdedores
+        //   LB R2 <- WB R1 perdedor + LB R1 winner
+        if (numTimes == 4) {
+            if (lbRodada == 1) return 2; // WB R2 -> LB R1
+            if (lbRodada == 2) return 1; // WB Final -> LB Final
+        }
+        
+        // Para 8 times (3 rodadas WB):
+        if (numTimes == 8) {
+            if (lbRodada == 1) return 3; // WB R3 -> LB R1
+            if (lbRodada == 2) return 2; // WB R2 -> LB R2
+            if (lbRodada == 3) return 0; // Só LB winners
+            if (lbRodada == 4) return 1; // WB Final -> LB Final
+        }
+        
+        return 0;
     }
 
     private boolean isFinalizada(Partida p) {
