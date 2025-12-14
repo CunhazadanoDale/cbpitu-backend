@@ -25,7 +25,7 @@ function Footer() {
                     </div>
                 </div>
                 <div className="footer-bottom">
-                    <p>&copy; 2024 CBPitu. Feito com 💜 entre amigos.</p>
+                    <p>&copy; 2026 CBPitu. Feito com 💜 entre amigos.</p>
                 </div>
             </div>
         </footer>

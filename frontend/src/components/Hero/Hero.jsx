@@ -22,7 +22,7 @@ function Hero() {
         <section className="hero">
             <div className="hero-bg-overlay"></div>
             <div className="hero-content" ref={contentRef}>
-                <div className="hero-badge">🏆 Edição 2024</div>
+                <div className="hero-badge">🏆 Edição 2025</div>
                 <h1 className="hero-title">
                     O Maior Campeonato<br />
                     <span className="gradient-text">Entre Amigos</span>

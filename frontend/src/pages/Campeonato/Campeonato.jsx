@@ -313,6 +313,88 @@ function Campeonato() {
                                     {partidasDaFase.length === 0 && <p className="no-partidas">Aguardando geração de partidas.</p>}
                                 </div>
                             </div>
+                        ) : faseAtual.formato === 'LOSER_BRACKET' ? (
+                            /* Double Elimination Bracket */
+                            <div className="double-elimination-container">
+                                {partidasDaFase.length === 0 ? (
+                                    <p className="no-partidas">Nenhuma partida gerada para esta fase ainda.</p>
+                                ) : (
+                                    <>
+                                        {/* Winners Bracket */}
+                                        {(() => {
+                                            const winnersPartidas = partidasDaFase.filter(p => p.rodada < 100 && !p.identificadorBracket?.startsWith('GF'))
+                                            return winnersPartidas.length > 0 && (
+                                                <div className="bracket-section winners-bracket">
+                                                    <div className="bracket-section-header">
+                                                        <span className="bracket-label">winner</span>
+                                                        <span className="bracket-badge">WINNERS_BRACKET</span>
+                                                    </div>
+                                                    <div className="bracket-grid">
+                                                        {organizarBracket(winnersPartidas).map((rodada, rodadaIndex) => (
+                                                            <div key={rodadaIndex} className="bracket-round">
+                                                                <h4 className="round-title">{getRoundName(rodadaIndex, organizarBracket(winnersPartidas).length)}</h4>
+                                                                <div className="round-matches">
+                                                                    {rodada.map(partida => (
+                                                                        <PartidaCard key={partida.id} partida={partida} onEdit={abrirEdicao} compact />
+                                                                    ))}
+                                                                </div>
+                                                            </div>
+                                                        ))}
+                                                    </div>
+                                                </div>
+                                            )
+                                        })()}
+
+                                        {/* Losers Bracket */}
+                                        {(() => {
+                                            const losersPartidas = partidasDaFase.filter(p => p.rodada >= 100)
+                                            return losersPartidas.length > 0 && (
+                                                <div className="bracket-section losers-bracket">
+                                                    <div className="bracket-section-header">
+                                                        <span className="bracket-label">loser</span>
+                                                        <span className="bracket-badge">LOSER_BRACKET</span>
+                                                    </div>
+                                                    <div className="bracket-grid">
+                                                        {organizarBracketLosers(losersPartidas).map((rodada, rodadaIndex) => (
+                                                            <div key={rodadaIndex} className="bracket-round">
+                                                                <h4 className="round-title">{getLosersRoundName(rodada[0]?.rodada, organizarBracketLosers(losersPartidas).length, rodadaIndex)}</h4>
+                                                                <div className="round-matches">
+                                                                    {rodada.map(partida => (
+                                                                        <PartidaCard key={partida.id} partida={partida} onEdit={abrirEdicao} compact />
+                                                                    ))}
+                                                                </div>
+                                                            </div>
+                                                        ))}
+                                                    </div>
+                                                </div>
+                                            )
+                                        })()}
+
+                                        {/* Grand Finals */}
+                                        {(() => {
+                                            const grandFinals = partidasDaFase.filter(p => p.identificadorBracket?.startsWith('GF'))
+                                            return grandFinals.length > 0 && (
+                                                <div className="bracket-section grand-finals">
+                                                    <div className="bracket-section-header">
+                                                        <span className="bracket-label">finals</span>
+                                                        <span className="bracket-badge grand">GRAND_FINALS</span>
+                                                    </div>
+                                                    <div className="bracket-grid">
+                                                        <div className="bracket-round">
+                                                            <h4 className="round-title">Grand Finals</h4>
+                                                            <div className="round-matches">
+                                                                {grandFinals.map(partida => (
+                                                                    <PartidaCard key={partida.id} partida={partida} onEdit={abrirEdicao} compact />
+                                                                ))}
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            )
+                                        })()}
+                                    </>
+                                )}
+                            </div>
                         ) : (
                             /* Bracket Mata-Mata */
                             <div className="bracket-container">
@@ -406,6 +488,38 @@ function organizarBracket(partidas) {
     })
 
     return rodadas.length > 0 ? rodadas : (partidas.length > 0 ? [[...partidas]] : [])
+}
+
+// Organiza partidas do Losers Bracket
+function organizarBracketLosers(partidas) {
+    const rodadas = []
+    const porRodada = {}
+
+    partidas.forEach(p => {
+        // Rodada do LB é 100 + numero real da rodada
+        const rodada = p.rodada || 101
+        if (!porRodada[rodada]) porRodada[rodada] = []
+        porRodada[rodada].push(p)
+    })
+
+    Object.keys(porRodada).sort((a, b) => a - b).forEach(rodada => {
+        rodadas.push(porRodada[rodada])
+    })
+
+    return rodadas.length > 0 ? rodadas : (partidas.length > 0 ? [[...partidas]] : [])
+}
+
+// Nome das rodadas do Losers Bracket
+function getLosersRoundName(rodada, total, index) {
+    const rodadaReal = (rodada || 101) - 100
+    if (total === 1) return 'Final do Losers'
+    const fromEnd = total - index
+    switch (fromEnd) {
+        case 1: return 'Final LB'
+        case 2: return 'Semifinal LB'
+        case 3: return 'Quartas LB'
+        default: return `Rodada ${rodadaReal}`
+    }
 }
 
 // Nome das rodadas
