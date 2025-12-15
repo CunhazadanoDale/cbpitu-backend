@@ -614,6 +614,17 @@
     min-height: 120px;
 }
 
+/* Grand Finals dentro do Winners */
+.grand-finals-round {
+    border-left: 2px solid var(--accent);
+    padding-left: 20px;
+    margin-left: 20px;
+}
+
+.round-title.grand {
+    color: var(--accent);
+}
+
 /* Campeão */
 .campeao-section {
     padding: 60px 24px;
