@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
-import { jogadoresApi, timesApi, campeonatosApi } from '../../services/api'
+import { jogadoresApi, timesApi, campeonatosApi, edicoesApi } from '../../services/api'
 import './Admin.css'
 
 function Admin() {
@@ -8,6 +8,7 @@ function Admin() {
     const [jogadores, setJogadores] = useState([])
     const [times, setTimes] = useState([])
     const [campeonatos, setCampeonatos] = useState([])
+    const [edicoes, setEdicoes] = useState([])
     const [loading, setLoading] = useState(false)
     const [error, setError] = useState(null)
     const [success, setSuccess] = useState(null)
@@ -28,6 +29,7 @@ function Admin() {
     ])
     const [novoCampeonato, setNovoCampeonato] = useState({ nome: '', descricao: '', limiteMaximoTimes: 8 })
     const [novaFase, setNovaFase] = useState({ nome: '', formato: 'MATA_MATA', classificadosNecessarios: 1, rodadasTotais: 1 })
+    const [novaEdicao, setNovaEdicao] = useState({ ano: new Date().getFullYear(), numeroEdicao: 1, nome: '', descricao: '' })
 
     const lanes = ['TOP', 'JUNGLE', 'MID', 'ADC', 'SUPPORT']
     const formatos = ['MATA_MATA', 'MATA_MATA_MD3', 'MATA_MATA_MD5', 'GRUPOS', 'GRUPOS_IDA_VOLTA', 'SISTEMA_SUICO', 'LOSER_BRACKET']
@@ -40,14 +42,16 @@ function Admin() {
         setLoading(true)
         setError(null)
         try {
-            const [jogadoresData, timesData, campeonatosData] = await Promise.all([
+            const [jogadoresData, timesData, campeonatosData, edicoesData] = await Promise.all([
                 jogadoresApi.listar().catch(() => []),
                 timesApi.listar().catch(() => []),
-                campeonatosApi.listar().catch(() => [])
+                campeonatosApi.listar().catch(() => []),
+                edicoesApi.listar().catch(() => [])
             ])
             setJogadores(jogadoresData || [])
             setTimes(timesData || [])
             setCampeonatos(campeonatosData || [])
+            setEdicoes(edicoesData || [])
         } catch (err) {
             setError('Erro ao conectar com o backend. Verifique se a API está rodando.')
         } finally {
@@ -266,6 +270,30 @@ function Admin() {
         }
     }
 
+    // ==================== Edições ====================
+    const criarEdicao = async (e) => {
+        e.preventDefault()
+        try {
+            await edicoesApi.criar(novaEdicao)
+            setNovaEdicao({ ano: new Date().getFullYear(), numeroEdicao: 1, nome: '', descricao: '' })
+            showSuccess('Edição criada com sucesso!')
+            loadData()
+        } catch (err) {
+            showError(err)
+        }
+    }
+
+    const deletarEdicao = async (id) => {
+        if (!confirm('Deletar esta edição?')) return
+        try {
+            await edicoesApi.deletar(id)
+            showSuccess('Edição deletada!')
+            loadData()
+        } catch (err) {
+            showError(err)
+        }
+    }
+
     // Jogadores disponíveis (não estão no time selecionado)
     const jogadoresDisponiveis = selectedTime
         ? jogadores.filter(j => !selectedTime.jogadores?.some(tj => tj.id === j.id))
@@ -295,6 +323,9 @@ function Admin() {
                 </button>
                 <button className={activeTab === 'campeonatos' ? 'active' : ''} onClick={() => setActiveTab('campeonatos')}>
                     🏆 Campeonatos ({campeonatos.length})
+                </button>
+                <button className={activeTab === 'edicoes' ? 'active' : ''} onClick={() => setActiveTab('edicoes')}>
+                    📅 Edições ({edicoes.length})
                 </button>
             </div>
 
@@ -563,6 +594,61 @@ function Admin() {
                             ) : (
                                 <div className="no-selection">
                                     <p>👈 Selecione um campeonato para gerenciar</p>
+                                </div>
+                            )}
+                        </div>
+                    </div>
+                )}
+
+                {/* ==================== EDIÇÕES ==================== */}
+                {activeTab === 'edicoes' && (
+                    <div className="tab-content">
+                        <div className="form-section">
+                            <h3>Criar Edição</h3>
+                            <form onSubmit={criarEdicao}>
+                                <div className="form-row">
+                                    <div className="form-group">
+                                        <label>Ano *</label>
+                                        <input type="number" min="2021" max="2030" value={novaEdicao.ano}
+                                            onChange={(e) => setNovaEdicao({ ...novaEdicao, ano: Number(e.target.value) })} required />
+                                    </div>
+                                    <div className="form-group">
+                                        <label>Nº Edição</label>
+                                        <input type="number" min="1" max="10" value={novaEdicao.numeroEdicao}
+                                            onChange={(e) => setNovaEdicao({ ...novaEdicao, numeroEdicao: Number(e.target.value) })} />
+                                    </div>
+                                </div>
+                                <div className="form-group">
+                                    <label>Nome *</label>
+                                    <input type="text" placeholder="Ex: CBPITU 2024" value={novaEdicao.nome}
+                                        onChange={(e) => setNovaEdicao({ ...novaEdicao, nome: e.target.value })} required />
+                                </div>
+                                <div className="form-group">
+                                    <label>Descrição</label>
+                                    <input type="text" placeholder="Descrição da edição" value={novaEdicao.descricao}
+                                        onChange={(e) => setNovaEdicao({ ...novaEdicao, descricao: e.target.value })} />
+                                </div>
+                                <button type="submit" className="btn btn-primary">Criar Edição</button>
+                            </form>
+                        </div>
+                        <div className="list-section">
+                            <h3>Edições Cadastradas</h3>
+                            {edicoes.length === 0 ? <p className="empty">Nenhuma edição</p> : (
+                                <div className="data-grid">
+                                    {edicoes.map(e => (
+                                        <div key={e.id} className="data-card edicao-card-admin">
+                                            <div className="data-card-header">
+                                                <strong>{e.nomeCompleto || e.nome}</strong>
+                                                <span className="badge">{e.ano}</span>
+                                            </div>
+                                            <p>{e.descricao || 'Sem descrição'}</p>
+                                            <div className="edicao-stats-admin">
+                                                <span>📊 {e.numeroCampeonatos || 0} campeonatos</span>
+                                                <span>👥 {e.numeroEscalacoes || 0} escalações</span>
+                                            </div>
+                                            <button onClick={() => deletarEdicao(e.id)} className="btn-delete">🗑️</button>
+                                        </div>
+                                    ))}
                                 </div>
                             )}
                         </div>

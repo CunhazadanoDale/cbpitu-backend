@@ -169,9 +169,61 @@ export const partidasApi = {
     }),
 };
 
+// ==================== Edições ====================
+
+export const edicoesApi = {
+    listar: () => request('/edicoes'),
+
+    buscarPorId: (id) => request(`/edicoes/${id}`),
+
+    buscarPorAno: (ano) => request(`/edicoes/ano/${ano}`),
+
+    criar: (edicao) => request('/edicoes', {
+        method: 'POST',
+        body: JSON.stringify(edicao),
+    }),
+
+    atualizar: (id, edicao) => request(`/edicoes/${id}`, {
+        method: 'PUT',
+        body: JSON.stringify(edicao),
+    }),
+
+    deletar: (id) => request(`/edicoes/${id}`, {
+        method: 'DELETE',
+    }),
+
+    buscarEscalacoes: (id) => request(`/edicoes/${id}/escalacoes`),
+};
+
+// ==================== Escalações ====================
+
+export const escalacoesApi = {
+    listar: () => request('/escalacoes'),
+
+    buscarPorId: (id) => request(`/escalacoes/${id}`),
+
+    buscarHistoricoTime: (timeId) => request(`/escalacoes/time/${timeId}`),
+
+    criar: (escalacao) => request('/escalacoes', {
+        method: 'POST',
+        body: JSON.stringify(escalacao),
+    }),
+
+    atualizar: (id, escalacao) => request(`/escalacoes/${id}`, {
+        method: 'PUT',
+        body: JSON.stringify(escalacao),
+    }),
+
+    deletar: (id) => request(`/escalacoes/${id}`, {
+        method: 'DELETE',
+    }),
+};
+
 export default {
     jogadores: jogadoresApi,
     times: timesApi,
     campeonatos: campeonatosApi,
     partidas: partidasApi,
+    edicoes: edicoesApi,
+    escalacoes: escalacoesApi,
 };

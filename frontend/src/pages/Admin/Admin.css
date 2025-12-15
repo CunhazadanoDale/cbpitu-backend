@@ -557,3 +557,29 @@
         display: none;
     }
 }
+
+/* Form Row */
+.form-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+}
+
+/* Edicao Card for Admin */
+.edicao-card-admin {
+    position: relative;
+}
+
+.edicao-card-admin .data-card-header {
+    margin-bottom: 12px;
+}
+
+.edicao-stats-admin {
+    display: flex;
+    gap: 16px;
+    margin-top: 12px;
+    padding-top: 12px;
+    border-top: 1px solid rgba(255, 255, 255, 0.05);
+    font-size: 0.8rem;
+    color: var(--text-muted);
+}
