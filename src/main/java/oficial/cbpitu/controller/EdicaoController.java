@@ -14,7 +14,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
 @RestController
-@RequestMapping("/edicoes")
+@RequestMapping("/api/edicoes")
 @RequiredArgsConstructor
 @CrossOrigin(origins = "*")
 public class EdicaoController {
