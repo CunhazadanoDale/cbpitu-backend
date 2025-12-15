@@ -55,6 +55,11 @@ public class Campeonato {
     @JoinColumn(name = "campeao_id")
     private Time campeao;
 
+    // Edição do campeonato (opcional - para associar a uma temporada)
+    @ManyToOne
+    @JoinColumn(name = "edicao_id")
+    private Edicao edicao;
+
     // Métodos utilitários
     public void adicionarTime(Time time) {
         this.timesParticipantes.add(time);

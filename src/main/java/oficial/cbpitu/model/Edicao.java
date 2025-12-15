@@ -14,7 +14,8 @@ import java.util.List;
 @EqualsAndHashCode(onlyExplicitlyIncluded = true)
 @AllArgsConstructor
 @NoArgsConstructor
-public class Edicao {
+public class
+Edicao {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
