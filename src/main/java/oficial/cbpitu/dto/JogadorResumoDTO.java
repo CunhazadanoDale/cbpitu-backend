@@ -15,4 +15,5 @@ public class JogadorResumoDTO {
     private Long id;
     private String nickname;
     private String laneLol;
+    private Integer titulos;
 }

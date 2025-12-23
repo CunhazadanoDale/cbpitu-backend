@@ -23,7 +23,11 @@ public class Jogador {
     private String nickname;
     private String nomeReal;
     private String laneLol; // lane (TOP, JUNGLE, MID, ADC, SUPPORT)
+    
+    // Títulos conquistados em campeonatos
+    private Integer titulos = 0;
 
     @ManyToMany(mappedBy = "jogadores")
     private Set<Time> times = new HashSet<>();
 }
+

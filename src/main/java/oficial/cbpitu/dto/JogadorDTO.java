@@ -16,5 +16,6 @@ public class JogadorDTO {
     private String nickname;
     private String nomeReal;
     private String laneLol;
+    private Integer titulos;
     private List<TimeResumoDTO> times = new ArrayList<>();
 }

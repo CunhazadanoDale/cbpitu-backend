@@ -25,10 +25,12 @@ public class JogadorMapper {
                 .nickname(jogador.getNickname())
                 .nomeReal(jogador.getNomeReal())
                 .laneLol(jogador.getLaneLol())
+                .titulos(jogador.getTitulos())
                 .times(jogador.getTimes().stream()
                         .map(t -> TimeResumoDTO.builder()
                                 .id(t.getId())
                                 .nomeTime(t.getNomeTime())
+                                .trofeus(t.getTrofeus())
                                 .build())
                         .collect(Collectors.toList()))
                 .build();
@@ -42,6 +44,7 @@ public class JogadorMapper {
                 .id(jogador.getId())
                 .nickname(jogador.getNickname())
                 .laneLol(jogador.getLaneLol())
+                .titulos(jogador.getTitulos())
                 .build();
     }
 
