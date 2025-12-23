@@ -23,7 +23,9 @@ public class Time {
 
     // informacoes do time no geral
     private String nomeTime;
-    private String trofeus;
+    
+    // Quantidade de títulos/troféus conquistados
+    private Integer trofeus = 0;
 
     @ElementCollection
     private Set<Long> campeonatosParticipados = new HashSet<>();
