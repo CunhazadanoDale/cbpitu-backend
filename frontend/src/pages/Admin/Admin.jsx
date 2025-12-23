@@ -27,7 +27,7 @@ function Admin() {
         { nickname: '', nomeReal: '', laneLol: 'ADC' },
         { nickname: '', nomeReal: '', laneLol: 'SUPPORT' },
     ])
-    const [novoCampeonato, setNovoCampeonato] = useState({ nome: '', descricao: '', limiteMaximoTimes: 8 })
+    const [novoCampeonato, setNovoCampeonato] = useState({ nome: '', descricao: '', limiteMaximoTimes: 8, edicaoId: '' })
     const [novaFase, setNovaFase] = useState({ nome: '', formato: 'MATA_MATA', classificadosNecessarios: 1, rodadasTotais: 1 })
     const [novaEdicao, setNovaEdicao] = useState({ ano: new Date().getFullYear(), numeroEdicao: 1, nome: '', descricao: '' })
 
@@ -189,8 +189,13 @@ function Admin() {
     const criarCampeonato = async (e) => {
         e.preventDefault()
         try {
-            await campeonatosApi.criar(novoCampeonato)
-            setNovoCampeonato({ nome: '', descricao: '', limiteMaximoTimes: 8 })
+            // Prepara o payload, convertendo edicaoId vazio para null
+            const payload = {
+                ...novoCampeonato,
+                edicaoId: novoCampeonato.edicaoId ? Number(novoCampeonato.edicaoId) : null
+            }
+            await campeonatosApi.criar(payload)
+            setNovoCampeonato({ nome: '', descricao: '', limiteMaximoTimes: 8, edicaoId: '' })
             showSuccess('Campeonato criado com sucesso!')
             loadData()
         } catch (err) {
@@ -500,7 +505,18 @@ function Admin() {
                                         onChange={(e) => setNovoCampeonato({ ...novoCampeonato, descricao: e.target.value })} />
                                     <input type="number" placeholder="Limite Times" value={novoCampeonato.limiteMaximoTimes}
                                         onChange={(e) => setNovoCampeonato({ ...novoCampeonato, limiteMaximoTimes: Number(e.target.value) })} min="2" />
+                                    <select
+                                        value={novoCampeonato.edicaoId}
+                                        onChange={(e) => setNovoCampeonato({ ...novoCampeonato, edicaoId: e.target.value })}
+                                        className="select-edicao"
+                                    >
+                                        <option value="">📅 Sem edição vinculada</option>
+                                        {edicoes.map(e => (
+                                            <option key={e.id} value={e.id}>{e.nomeCompleto || e.nome} ({e.ano})</option>
+                                        ))}
+                                    </select>
                                     <button type="submit" className="btn btn-primary">Criar</button>
+
                                 </form>
                             </div>
                             <div className="list-section">
@@ -510,7 +526,10 @@ function Admin() {
                                         {campeonatos.map(c => (
                                             <div key={c.id} className={`data-item ${selectedCampeonato?.id === c.id ? 'selected' : ''}`}
                                                 onClick={() => setSelectedCampeonato(c)}>
-                                                <strong>{c.nome}</strong>
+                                                <div className="data-item-main">
+                                                    <strong>{c.nome}</strong>
+                                                    {c.edicaoNome && <span className="badge-edicao">📅 {c.edicaoNome}</span>}
+                                                </div>
                                                 <span className="badge-status">{c.status}</span>
                                                 <button onClick={(e) => { e.stopPropagation(); deletarCampeonato(c.id); }} className="btn-delete">🗑️</button>
                                             </div>
@@ -526,7 +545,11 @@ function Admin() {
                                 <div className="detail-panel">
                                     <h3>🏆 {selectedCampeonato.nome}</h3>
                                     <p className="detail-sub">Status: <span className="badge-status">{selectedCampeonato.status}</span></p>
+                                    {selectedCampeonato.edicaoNome && (
+                                        <p className="detail-sub">Edição: <span className="badge-edicao">{selectedCampeonato.edicaoNome}</span></p>
+                                    )}
                                     <p className="detail-sub">Times: {selectedCampeonato.numeroTimesInscritos || 0}/{selectedCampeonato.limiteMaximoTimes || '∞'}</p>
+
 
                                     {/* Ações de Status */}
                                     <div className="action-buttons">

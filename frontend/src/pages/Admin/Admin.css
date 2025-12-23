@@ -583,3 +583,36 @@
     font-size: 0.8rem;
     color: var(--text-muted);
 }
+
+/* Badge Edição */
+.badge-edicao {
+    font-size: 0.7rem;
+    padding: 3px 8px;
+    background: rgba(139, 92, 246, 0.15);
+    color: var(--primary-light);
+    border-radius: 4px;
+    margin-left: 8px;
+}
+
+.data-item-main {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.data-item-main strong {
+    flex: initial;
+}
+
+.data-item-main .badge-edicao {
+    margin-left: 0;
+    font-size: 0.65rem;
+    display: inline-block;
+    width: fit-content;
+}
+
+/* Select Edição */
+.select-edicao {
+    width: 100%;
+}
