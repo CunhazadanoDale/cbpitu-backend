@@ -25,4 +25,8 @@ public class CampeonatoDTO {
     private List<TimeResumoDTO> timesParticipantes;
     private List<FaseDTO> fases;
     private TimeResumoDTO campeao;
+    
+    // Edição vinculada
+    private Long edicaoId;
+    private String edicaoNome;
 }

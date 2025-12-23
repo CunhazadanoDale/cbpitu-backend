@@ -26,4 +26,7 @@ public class CriarCampeonatoDTO {
     private LocalDate dataInicio;
     private LocalDate dataFim;
     private Integer limiteMaximoTimes;
+    
+    // Edição à qual este campeonato pertence (opcional)
+    private Long edicaoId;
 }

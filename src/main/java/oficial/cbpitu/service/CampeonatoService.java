@@ -26,6 +26,8 @@ public class CampeonatoService {
     private final GrupoRepository grupoRepository;
     private final PartidaRepository partidaRepository;
     private final TimeRepository timeRepository;
+    private final JogadorRepository jogadorRepository;
+    private final EscalacaoRepository escalacaoRepository;
 
     // Strategies
     private final MataMataStrategy mataMataStrategy;
@@ -600,13 +602,60 @@ public class CampeonatoService {
             System.out.println("Sem próxima fase. Finalizando campeonato.");
             // Campeonato finalizado - determina campeão
             if (!classificados.isEmpty()) {
-                campeonato.setCampeao(classificados.get(0));
+                Time campeao = classificados.get(0);
+                campeonato.setCampeao(campeao);
+                
+                // Atribui títulos ao time e jogadores
+                atribuirTitulos(campeonato, campeao);
             }
             campeonato.setStatus(StatusCampeonato.FINALIZADO);
         }
 
         return campeonatoRepository.save(campeonato);
     }
+    
+    /**
+     * Atribui títulos ao time campeão e seus jogadores.
+     * Usa a escalação da edição se existir, senão usa os jogadores atuais do time.
+     */
+    private void atribuirTitulos(Campeonato campeonato, Time campeao) {
+        System.out.println("Atribuindo títulos para o campeão: " + campeao.getNomeTime());
+        
+        // Incrementa troféu do time
+        Integer trofeusAtuais = campeao.getTrofeus() != null ? campeao.getTrofeus() : 0;
+        campeao.setTrofeus(trofeusAtuais + 1);
+        timeRepository.save(campeao);
+        System.out.println("Time agora tem " + campeao.getTrofeus() + " troféu(s)");
+        
+        // Busca jogadores que devem receber o título
+        java.util.Set<Jogador> jogadoresParaPremiar = new java.util.HashSet<>();
+        
+        // Se campeonato tem edição, busca escalação daquela edição
+        if (campeonato.getEdicao() != null) {
+            Optional<Escalacao> escalacaoOpt = escalacaoRepository
+                    .findByTimeIdAndEdicaoId(campeao.getId(), campeonato.getEdicao().getId());
+            
+            if (escalacaoOpt.isPresent()) {
+                jogadoresParaPremiar.addAll(escalacaoOpt.get().getJogadores());
+                System.out.println("Usando escalação da edição: " + jogadoresParaPremiar.size() + " jogadores");
+            }
+        }
+        
+        // Se não encontrou escalação, usa jogadores atuais do time
+        if (jogadoresParaPremiar.isEmpty() && campeao.getJogadores() != null) {
+            jogadoresParaPremiar.addAll(campeao.getJogadores());
+            System.out.println("Usando roster atual do time: " + jogadoresParaPremiar.size() + " jogadores");
+        }
+        
+        // Incrementa título de cada jogador
+        for (Jogador jogador : jogadoresParaPremiar) {
+            Integer titulosAtuais = jogador.getTitulos() != null ? jogador.getTitulos() : 0;
+            jogador.setTitulos(titulosAtuais + 1);
+            jogadorRepository.save(jogador);
+            System.out.println("Jogador " + jogador.getNickname() + " agora tem " + jogador.getTitulos() + " título(s)");
+        }
+    }
+
 
     // Helpers
 
