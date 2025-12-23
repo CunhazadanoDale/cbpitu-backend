@@ -11,4 +11,5 @@ public class TimeResumoDTO {
 
     private Long id;
     private String nomeTime;
+    private Integer trofeus;
 }

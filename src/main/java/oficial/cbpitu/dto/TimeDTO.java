@@ -14,7 +14,7 @@ public class TimeDTO {
 
     private Long id;
     private String nomeTime;
-    private String trofeus;
+    private Integer trofeus;
     private JogadorResumoDTO capitao;
     private List<JogadorResumoDTO> jogadores = new ArrayList<>();
 }

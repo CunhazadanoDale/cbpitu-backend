@@ -41,6 +41,7 @@ public class TimeMapper {
         return TimeResumoDTO.builder()
                 .id(time.getId())
                 .nomeTime(time.getNomeTime())
+                .trofeus(time.getTrofeus())
                 .build();
     }
 

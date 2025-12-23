@@ -18,8 +18,8 @@ public class CriarTimeDTO {
     @Size(min = 2, max = 100, message = "Nome do time deve ter entre 2 e 100 caracteres")
     private String nomeTime;
 
-    @Size(max = 500, message = "Troféus deve ter no máximo 500 caracteres")
-    private String trofeus;
+    // Quantidade de troféus (opcional, default 0)
+    private Integer trofeus;
 
     private Long capitaoId;
 }
