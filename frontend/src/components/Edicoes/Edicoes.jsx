@@ -46,36 +46,49 @@ function EdicaoCard({ edicao, campeonatos }) {
     const campeaoNome = edicao.campeao ||
         (campeonatos && campeonatos.find(c => c.campeao)?.campeao?.nomeTime)
 
-    // Campeonato principal da edição (para link)
+    // Campeonato principal da edição (para link rápido)
     const campeonatoPrincipal = campeonatos && campeonatos[0]
 
     return (
-        <div className={`edicao-card ${isEmAndamento ? 'current' : ''}`}>
-            {isEmAndamento && <div className="edicao-badge">EM ANDAMENTO</div>}
-            <h3>{edicao.nomeCompleto || edicao.nome}</h3>
-            <p>{edicao.descricao || `Edição ${edicao.numeroEdicao} do ano de ${edicao.ano}`}</p>
+        <Link to={`/edicao/${edicao.id}`} className="edicao-card-link">
+            <div className={`edicao-card ${isEmAndamento ? 'current' : ''}`}>
+                {isEmAndamento && <div className="edicao-badge">EM ANDAMENTO</div>}
+                <h3>{edicao.nomeCompleto || edicao.nome}</h3>
+                <p>{edicao.descricao || `Edição ${edicao.numeroEdicao} do ano de ${edicao.ano}`}</p>
 
-            {isEmAndamento ? (
-                <div className="edicao-actions">
-                    {campeonatoPrincipal && (
-                        <Link to={`/campeonato/${campeonatoPrincipal.id}`} className="btn-ver-campeonato">
-                            Ver Campeonato →
-                        </Link>
-                    )}
-                </div>
-            ) : (
-                <div className="edicao-champion">
-                    <span>🏆 Campeão:</span>
-                    <strong>{campeaoNome || 'A definir'}</strong>
-                </div>
-            )}
+                {isEmAndamento ? (
+                    <div className="edicao-actions">
+                        {campeonatoPrincipal && (
+                            <span
+                                className="btn-ver-campeonato"
+                                onClick={(e) => {
+                                    e.preventDefault()
+                                    e.stopPropagation()
+                                    window.location.href = `/campeonato/${campeonatoPrincipal.id}`
+                                }}
+                            >
+                                Ver Campeonato →
+                            </span>
+                        )}
+                    </div>
+                ) : (
+                    <div className="edicao-champion">
+                        <span>🏆 Campeão:</span>
+                        <strong>{campeaoNome || 'A definir'}</strong>
+                    </div>
+                )}
 
-            {edicao.numeroEscalacoes > 0 && (
-                <div className="edicao-stats">
-                    <span>{edicao.numeroEscalacoes} times participantes</span>
+                {edicao.numeroEscalacoes > 0 && (
+                    <div className="edicao-stats">
+                        <span>{edicao.numeroEscalacoes} times participantes</span>
+                    </div>
+                )}
+
+                <div className="edicao-ver-detalhes">
+                    Ver detalhes da edição →
                 </div>
-            )}
-        </div>
+            </div>
+        </Link>
     )
 }
 

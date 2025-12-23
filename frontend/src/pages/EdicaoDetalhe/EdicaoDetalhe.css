@@ -1,0 +1,381 @@
+.edicao-detalhe-page {
+    min-height: 100vh;
+    background: var(--bg-dark);
+}
+
+/* Loading e Error */
+.loading-container,
+.error-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 60vh;
+    color: var(--text-muted);
+    gap: 20px;
+}
+
+.loading-spinner {
+    width: 40px;
+    height: 40px;
+    border: 3px solid rgba(139, 92, 246, 0.2);
+    border-top-color: var(--primary);
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}
+
+.btn-voltar {
+    color: var(--primary-light);
+    text-decoration: none;
+    padding: 12px 24px;
+    border: 1px solid var(--primary);
+    border-radius: var(--border-radius);
+    transition: var(--transition);
+}
+
+.btn-voltar:hover {
+    background: rgba(139, 92, 246, 0.1);
+}
+
+/* Header */
+.edicao-header {
+    background: linear-gradient(135deg, rgba(139, 92, 246, 0.1) 0%, rgba(6, 182, 212, 0.05) 100%);
+    padding: 40px 24px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.back-link {
+    color: var(--text-muted);
+    font-size: 0.9rem;
+    display: inline-block;
+    margin-bottom: 20px;
+    transition: var(--transition);
+    text-decoration: none;
+}
+
+.back-link:hover {
+    color: var(--primary-light);
+}
+
+.edicao-info {
+    text-align: center;
+    margin-bottom: 32px;
+}
+
+.edicao-info h1 {
+    font-family: 'Orbitron', sans-serif;
+    font-size: 2.5rem;
+    margin-bottom: 8px;
+}
+
+.edicao-ano {
+    display: inline-block;
+    background: var(--gradient-primary);
+    padding: 6px 16px;
+    border-radius: var(--border-radius);
+    font-family: 'Orbitron', sans-serif;
+    font-weight: 700;
+    font-size: 0.875rem;
+    margin-bottom: 16px;
+}
+
+.edicao-descricao {
+    color: var(--text-secondary);
+    font-size: 1.1rem;
+    max-width: 600px;
+    margin: 0 auto;
+}
+
+.status-badge {
+    display: inline-block;
+    padding: 6px 16px;
+    border-radius: 50px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    margin-bottom: 12px;
+}
+
+.status-badge.em-andamento {
+    background: var(--accent);
+    color: var(--bg-dark);
+}
+
+.edicao-stats {
+    display: flex;
+    justify-content: center;
+    gap: 48px;
+}
+
+.stat-item {
+    text-align: center;
+}
+
+.stat-value {
+    display: block;
+    font-family: 'Orbitron', sans-serif;
+    font-size: 2rem;
+    font-weight: 700;
+    color: var(--primary-light);
+}
+
+.stat-label {
+    font-size: 0.85rem;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+/* Content */
+.edicao-content {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 48px 24px;
+}
+
+.edicao-content section {
+    margin-bottom: 48px;
+}
+
+.edicao-content h2 {
+    font-family: 'Orbitron', sans-serif;
+    font-size: 1.5rem;
+    margin-bottom: 24px;
+    color: var(--text-primary);
+}
+
+/* Campeonatos Grid */
+.campeonatos-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+    gap: 24px;
+}
+
+.campeonato-card-link {
+    text-decoration: none;
+    color: inherit;
+}
+
+.campeonato-card {
+    background: var(--bg-card);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    border-radius: var(--border-radius-lg);
+    padding: 24px;
+    transition: var(--transition);
+}
+
+.campeonato-card:hover {
+    border-color: var(--primary);
+    transform: translateY(-4px);
+    box-shadow: 0 8px 24px rgba(139, 92, 246, 0.15);
+}
+
+.campeonato-card .status-badge {
+    margin-bottom: 16px;
+}
+
+.campeonato-card h3 {
+    font-family: 'Orbitron', sans-serif;
+    font-size: 1.25rem;
+    margin-bottom: 8px;
+}
+
+.campeonato-card p {
+    color: var(--text-secondary);
+    font-size: 0.9rem;
+    margin-bottom: 16px;
+}
+
+.campeonato-meta {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    color: var(--text-muted);
+    font-size: 0.85rem;
+}
+
+.ver-mais {
+    color: var(--primary-light);
+    font-weight: 500;
+}
+
+/* Status badges */
+.status-rascunho { background: rgba(100, 100, 100, 0.3); color: #888; }
+.status-inscricoes_abertas { background: rgba(34, 197, 94, 0.2); color: #4ade80; }
+.status-inscricoes_encerradas { background: rgba(245, 158, 11, 0.2); color: #f59e0b; }
+.status-em_andamento { background: rgba(139, 92, 246, 0.2); color: var(--primary-light); }
+.status-finalizado { background: rgba(6, 182, 212, 0.2); color: var(--secondary); }
+
+/* Times Lista */
+.times-lista {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.time-card {
+    background: var(--bg-card);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    border-radius: var(--border-radius-lg);
+    overflow: hidden;
+}
+
+.time-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 20px 24px;
+    cursor: pointer;
+    transition: var(--transition);
+}
+
+.time-header:hover {
+    background: rgba(139, 92, 246, 0.05);
+}
+
+.time-info h3 {
+    font-family: 'Orbitron', sans-serif;
+    font-size: 1.1rem;
+    margin-bottom: 4px;
+}
+
+.time-jogadores-count {
+    color: var(--text-muted);
+    font-size: 0.85rem;
+}
+
+.expand-icon {
+    color: var(--text-muted);
+    font-size: 0.8rem;
+    transition: transform 0.3s ease;
+}
+
+.expand-icon.expanded {
+    transform: rotate(180deg);
+}
+
+/* Jogadores Lista */
+.time-jogadores {
+    padding: 0 24px 24px;
+    border-top: 1px solid rgba(255, 255, 255, 0.05);
+    animation: slideDown 0.3s ease;
+}
+
+@keyframes slideDown {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.jogadores-lista {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.jogador-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 16px;
+    background: var(--bg-darker);
+    border-radius: var(--border-radius);
+    margin-top: 8px;
+}
+
+.jogador-nick {
+    font-weight: 600;
+    flex: 1;
+}
+
+.jogador-lane {
+    padding: 4px 10px;
+    background: rgba(139, 92, 246, 0.15);
+    color: var(--primary-light);
+    border-radius: 4px;
+    font-size: 0.75rem;
+    font-weight: 500;
+    text-transform: uppercase;
+}
+
+.capitao-badge {
+    font-size: 0.75rem;
+    color: var(--accent);
+}
+
+.sem-jogadores {
+    color: var(--text-muted);
+    font-style: italic;
+    padding: 16px 0;
+}
+
+.sem-times {
+    text-align: center;
+    padding: 40px;
+    background: var(--bg-card);
+    border-radius: var(--border-radius-lg);
+    color: var(--text-muted);
+}
+
+/* Campeão */
+.section-campeao {
+    text-align: center;
+}
+
+.campeao-card {
+    display: inline-block;
+    background: linear-gradient(135deg, rgba(245, 158, 11, 0.15) 0%, rgba(234, 179, 8, 0.1) 100%);
+    border: 2px solid rgba(245, 158, 11, 0.4);
+    border-radius: var(--border-radius-lg);
+    padding: 40px 60px;
+}
+
+.campeao-trophy {
+    font-size: 4rem;
+    display: block;
+    margin-bottom: 16px;
+}
+
+.campeao-card h2 {
+    font-family: 'Orbitron', sans-serif;
+    font-size: 1rem;
+    color: var(--accent);
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    margin-bottom: 8px;
+}
+
+.campeao-nome {
+    font-family: 'Orbitron', sans-serif;
+    font-size: 1.75rem;
+    font-weight: 700;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .edicao-info h1 {
+        font-size: 1.75rem;
+    }
+
+    .edicao-stats {
+        gap: 24px;
+    }
+
+    .stat-value {
+        font-size: 1.5rem;
+    }
+
+    .campeonatos-grid {
+        grid-template-columns: 1fr;
+    }
+}

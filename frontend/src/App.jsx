@@ -8,6 +8,7 @@ import CTA from './components/CTA/CTA'
 import Footer from './components/Footer/Footer'
 import Admin from './pages/Admin/Admin'
 import Campeonato from './pages/Campeonato/Campeonato'
+import EdicaoDetalhe from './pages/EdicaoDetalhe/EdicaoDetalhe'
 
 function LandingPage() {
   return (
@@ -32,6 +33,7 @@ function App() {
         <Route path="/" element={<LandingPage />} />
         <Route path="/admin" element={<Admin />} />
         <Route path="/campeonato/:id" element={<Campeonato />} />
+        <Route path="/edicao/:id" element={<EdicaoDetalhe />} />
       </Routes>
     </BrowserRouter>
   )
