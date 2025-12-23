@@ -37,10 +37,10 @@ public class TimeService {
     }
 
     @Transactional
-    public Time criar(String nomeTime, String trofeus, Long capitaoId) {
+    public Time criar(String nomeTime, Integer trofeus, Long capitaoId) {
         Time time = new Time();
         time.setNomeTime(nomeTime);
-        time.setTrofeus(trofeus);
+        time.setTrofeus(trofeus != null ? trofeus : 0);
 
         if (capitaoId != null) {
             Jogador capitao = jogadorRepository.findById(capitaoId)
@@ -53,11 +53,11 @@ public class TimeService {
     }
 
     @Transactional
-    public Time atualizar(Long id, String nomeTime, String trofeus, Long capitaoId) {
+    public Time atualizar(Long id, String nomeTime, Integer trofeus, Long capitaoId) {
         Time time = buscarOuFalhar(id);
 
         time.setNomeTime(nomeTime);
-        time.setTrofeus(trofeus);
+        time.setTrofeus(trofeus != null ? trofeus : 0);
 
         if (capitaoId != null) {
             Jogador capitao = jogadorRepository.findById(capitaoId)
