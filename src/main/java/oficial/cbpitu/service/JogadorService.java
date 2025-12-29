@@ -16,6 +16,38 @@ import java.util.Optional;
 public class JogadorService {
 
     private final JogadorRepository jogadorRepository;
+    private final oficial.cbpitu.repository.EscalacaoRepository escalacaoRepository; // [NEW]
+
+    public oficial.cbpitu.dto.JogadorDetalhesDTO buscarDetalhes(Long id) {
+        Jogador jogador = buscarOuFalhar(id);
+        
+        // Busca histórico de escalações
+        List<oficial.cbpitu.model.Escalacao> historico = escalacaoRepository.findByJogadoresId(id);
+        
+        List<oficial.cbpitu.dto.JogadorDetalhesDTO.HistoricoItemDTO> historicoDTO = historico.stream()
+            .sorted((e1, e2) -> {
+                int anoCompare = e2.getEdicao().getAno().compareTo(e1.getEdicao().getAno());
+                if (anoCompare != 0) return anoCompare;
+                return e2.getEdicao().getId().compareTo(e1.getEdicao().getId());
+            })
+            .map(e -> oficial.cbpitu.dto.JogadorDetalhesDTO.HistoricoItemDTO.builder()
+                .nomeTime(e.getTime().getNomeTime())
+                .edicaoId(e.getEdicao().getId())
+                .nomeEdicao(e.getEdicao().getNomeCompleto())
+                .anoEdicao(e.getEdicao().getAno())
+                .isCapitao(e.getCapitao() != null && e.getCapitao().getId().equals(id))
+                .build())
+            .toList();
+            
+        return oficial.cbpitu.dto.JogadorDetalhesDTO.builder()
+            .id(jogador.getId())
+            .nickname(jogador.getNickname())
+            .nomeReal(jogador.getNomeReal())
+            .laneLol(jogador.getLaneLol())
+            .titulos(jogador.getTitulos())
+            .historico(historicoDTO)
+            .build();
+    }
 
     public List<Jogador> listarTodos() {
         return jogadorRepository.findAll();
