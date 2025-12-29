@@ -34,6 +34,11 @@ public class JogadorController {
                 .orElseThrow(() -> new RecursoNaoEncontradoException("Jogador", id));
         return ResponseEntity.ok(jogadorMapper.toDTO(jogador));
     }
+    
+    @GetMapping("/{id}/detalhes")
+    public ResponseEntity<oficial.cbpitu.dto.JogadorDetalhesDTO> buscarDetalhes(@PathVariable Long id) {
+        return ResponseEntity.ok(jogadorService.buscarDetalhes(id));
+    }
 
     @GetMapping("/lane/{lane}")
     public ResponseEntity<List<JogadorDTO>> buscarPorLane(@PathVariable String lane) {
