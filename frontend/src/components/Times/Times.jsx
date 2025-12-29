@@ -1,26 +1,23 @@
+import { useState, useEffect } from 'react'
+import { Link } from 'react-router-dom'
+import { timesApi } from '../../services/api'
 import './Times.css'
-
-// Dados mockados - depois virão da API
-const times = [
-    { id: 1, nome: 'Nome do Time 1', titulo: '🏆 2x Campeão', jogadores: 5 },
-    { id: 2, nome: 'Nome do Time 2', titulo: '🏆 1x Campeão', jogadores: 5 },
-    { id: 3, nome: 'Nome do Time 3', titulo: 'Vice-campeão 2023', jogadores: 5 },
-    { id: 4, nome: 'Nome do Time 4', titulo: 'Novato 2024', jogadores: 5 },
-]
 
 function TimeCard({ time }) {
     return (
         <div className="time-card">
             <div className="time-card-image">
                 <div className="image-placeholder">
-                    <span>LOGO</span>
+                    <span>{time.nomeTime ? time.nomeTime.substring(0, 2).toUpperCase() : 'TM'}</span>
                 </div>
             </div>
             <div className="time-card-content">
-                <h3 className="time-name">{time.nome}</h3>
-                <p className="time-titles">{time.titulo}</p>
+                <h3 className="time-name">{time.nomeTime}</h3>
+                <p className="time-titles">
+                    {time.trofeus > 0 ? `🏆 ${time.trofeus} Títulos` : 'Em busca da glória'}
+                </p>
                 <div className="time-players">
-                    <span>{time.jogadores} jogadores</span>
+                    <span>{time.jogadores?.length || 0} jogadores</span>
                 </div>
             </div>
         </div>
@@ -28,21 +25,45 @@ function TimeCard({ time }) {
 }
 
 function Times() {
+    const [times, setTimes] = useState([])
+    const [loading, setLoading] = useState(true)
+
+    useEffect(() => {
+        const fetchTopTimes = async () => {
+            try {
+                const data = await timesApi.listarTop()
+                setTimes(data)
+            } catch (error) {
+                console.error("Erro ao carregar top times:", error)
+            } finally {
+                setLoading(false)
+            }
+        }
+
+        fetchTopTimes()
+    }, [])
+
     return (
         <section id="times" className="section times">
             <div className="container">
                 <div className="section-header">
                     <span className="section-tag">Participantes</span>
-                    <h2 className="section-title">Conheça os <span className="gradient-text">Times</span></h2>
-                    <p className="section-description">Os esquadrões que disputam a glória do CBPitu</p>
+                    <h2 className="section-title">Conheça os <span className="gradient-text">Top Times</span></h2>
+                    <p className="section-description">Os esquadrões que dominam a glória do CBPitu</p>
                 </div>
-                <div className="times-grid">
-                    {times.map(time => (
-                        <TimeCard key={time.id} time={time} />
-                    ))}
-                </div>
+
+                {loading ? (
+                    <div className="loading-spinner"></div>
+                ) : (
+                    <div className="times-grid">
+                        {times.map(time => (
+                            <TimeCard key={time.id} time={time} />
+                        ))}
+                    </div>
+                )}
+
                 <div className="times-cta">
-                    <a href="#" className="btn btn-outline">Ver Todos os Times</a>
+                    <Link to="/times" className="btn btn-outline">Ver Todos os Times</Link>
                 </div>
             </div>
         </section>
