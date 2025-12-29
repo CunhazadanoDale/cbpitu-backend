@@ -104,6 +104,22 @@ public class CampeonatoService {
             throw new RegraNegocioException("Time já está inscrito neste campeonato");
         }
 
+        if (campeonato.getEdicao() != null) {
+            // Verifica se já existe escalação para este time nesta edição
+            if (!escalacaoRepository.existsByTimeIdAndEdicaoId(time.getId(), campeonato.getEdicao().getId())) {
+                Escalacao novaEscalacao = new Escalacao();
+                novaEscalacao.setTime(time);
+                novaEscalacao.setEdicao(campeonato.getEdicao());
+                novaEscalacao.setCapitao(time.getCapitao());
+                // Copia os jogadores do time para a escalação da edição
+                novaEscalacao.setJogadores(new java.util.HashSet<>(time.getJogadores()));
+                
+                escalacaoRepository.save(novaEscalacao);
+                System.out.println("Escalação criada automaticamente para o time " + time.getNomeTime() 
+                        + " na edição " + campeonato.getEdicao().getNome());
+            }
+        }
+
         campeonato.adicionarTime(time);
         return campeonatoRepository.save(campeonato);
     }
