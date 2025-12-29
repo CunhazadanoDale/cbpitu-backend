@@ -163,8 +163,8 @@ function EdicaoDetalhe() {
                                                 <ul className="jogadores-lista">
                                                     {escalacao.jogadores.map(jogador => (
                                                         <li key={jogador.id} className="jogador-item">
-                                                            <span className="jogador-nick">{jogador.nick}</span>
-                                                            <span className="jogador-lane">{jogador.lane}</span>
+                                                            <span className="jogador-nick">{jogador.nickname}</span>
+                                                            <span className="jogador-lane">{jogador.laneLol}</span>
                                                             {escalacao.capitao?.id === jogador.id && (
                                                                 <span className="capitao-badge">👑 Capitão</span>
                                                             )}
