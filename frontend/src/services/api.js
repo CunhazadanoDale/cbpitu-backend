@@ -45,6 +45,8 @@ export const jogadoresApi = {
 
     buscarPorId: (id) => request(`/jogadores/${id}`),
 
+    buscarDetalhes: (id) => request(`/jogadores/${id}/detalhes`),
+
     buscarPorLane: (lane) => request(`/jogadores/lane/${lane}`),
 
     buscarSemTime: () => request('/jogadores/sem-time'),

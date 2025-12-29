@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useParams, Link } from 'react-router-dom'
 import { edicoesApi, campeonatosApi } from '../../services/api'
+import PlayerProfileModal from '../../components/PlayerProfileModal/PlayerProfileModal'
 import './EdicaoDetalhe.css'
 
 function EdicaoDetalhe() {
@@ -11,6 +12,9 @@ function EdicaoDetalhe() {
     const [loading, setLoading] = useState(true)
     const [error, setError] = useState(null)
     const [timeExpandido, setTimeExpandido] = useState(null)
+
+    // Modal state
+    const [selectedPlayerId, setSelectedPlayerId] = useState(null)
 
     useEffect(() => {
         carregarDados()
@@ -53,6 +57,10 @@ function EdicaoDetalhe() {
         setTimeExpandido(timeExpandido === timeId ? null : timeId)
     }
 
+    const handlePlayerClick = (playerId) => {
+        setSelectedPlayerId(playerId)
+    }
+
     if (loading) {
         return (
             <div className="edicao-detalhe-page">
@@ -79,6 +87,11 @@ function EdicaoDetalhe() {
 
     return (
         <div className="edicao-detalhe-page">
+            <PlayerProfileModal
+                jogadorId={selectedPlayerId}
+                onClose={() => setSelectedPlayerId(null)}
+            />
+
             {/* Header */}
             <header className="edicao-header">
                 <Link to="/" className="back-link">← Voltar ao Início</Link>
@@ -113,8 +126,8 @@ function EdicaoDetalhe() {
                         <h2>Campeonatos</h2>
                         <div className="campeonatos-grid">
                             {campeonatos.map(campeonato => (
-                                <Link 
-                                    key={campeonato.id} 
+                                <Link
+                                    key={campeonato.id}
                                     to={`/campeonato/${campeonato.id}`}
                                     className="campeonato-card-link"
                                 >
@@ -142,7 +155,7 @@ function EdicaoDetalhe() {
                         <div className="times-lista">
                             {escalacoes.map(escalacao => (
                                 <div key={escalacao.id} className="time-card">
-                                    <div 
+                                    <div
                                         className="time-header"
                                         onClick={() => toggleTimeExpandido(escalacao.id)}
                                     >
@@ -156,13 +169,18 @@ function EdicaoDetalhe() {
                                             ▼
                                         </span>
                                     </div>
-                                    
+
                                     {timeExpandido === escalacao.id && (
                                         <div className="time-jogadores">
                                             {escalacao.jogadores && escalacao.jogadores.length > 0 ? (
                                                 <ul className="jogadores-lista">
                                                     {escalacao.jogadores.map(jogador => (
-                                                        <li key={jogador.id} className="jogador-item">
+                                                        <li
+                                                            key={jogador.id}
+                                                            className="jogador-item clickable-player"
+                                                            onClick={() => handlePlayerClick(jogador.id)}
+                                                            title="Ver perfil"
+                                                        >
                                                             <span className="jogador-nick">{jogador.nickname}</span>
                                                             <span className="jogador-lane">{jogador.laneLol}</span>
                                                             {escalacao.capitao?.id === jogador.id && (

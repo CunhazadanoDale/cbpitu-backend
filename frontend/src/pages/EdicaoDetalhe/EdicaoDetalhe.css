@@ -25,7 +25,9 @@
 }
 
 @keyframes spin {
-    to { transform: rotate(360deg); }
+    to {
+        transform: rotate(360deg);
+    }
 }
 
 .btn-voltar {
@@ -205,11 +207,30 @@
 }
 
 /* Status badges */
-.status-rascunho { background: rgba(100, 100, 100, 0.3); color: #888; }
-.status-inscricoes_abertas { background: rgba(34, 197, 94, 0.2); color: #4ade80; }
-.status-inscricoes_encerradas { background: rgba(245, 158, 11, 0.2); color: #f59e0b; }
-.status-em_andamento { background: rgba(139, 92, 246, 0.2); color: var(--primary-light); }
-.status-finalizado { background: rgba(6, 182, 212, 0.2); color: var(--secondary); }
+.status-rascunho {
+    background: rgba(100, 100, 100, 0.3);
+    color: #888;
+}
+
+.status-inscricoes_abertas {
+    background: rgba(34, 197, 94, 0.2);
+    color: #4ade80;
+}
+
+.status-inscricoes_encerradas {
+    background: rgba(245, 158, 11, 0.2);
+    color: #f59e0b;
+}
+
+.status-em_andamento {
+    background: rgba(139, 92, 246, 0.2);
+    color: var(--primary-light);
+}
+
+.status-finalizado {
+    background: rgba(6, 182, 212, 0.2);
+    color: var(--secondary);
+}
 
 /* Times Lista */
 .times-lista {
@@ -271,6 +292,7 @@
         opacity: 0;
         transform: translateY(-10px);
     }
+
     to {
         opacity: 1;
         transform: translateY(0);
@@ -378,4 +400,13 @@
     .campeonatos-grid {
         grid-template-columns: 1fr;
     }
+}
+
+.clickable-player {
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+.clickable-player:hover {
+    background-color: rgba(138, 43, 226, 0.2);
 }
