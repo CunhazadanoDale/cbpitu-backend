@@ -1,0 +1,189 @@
+.modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: rgba(0, 0, 0, 0.85);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+    backdrop-filter: blur(5px);
+    animation: fadeIn 0.3s ease;
+}
+
+.modal-content {
+    background-color: #1a1a2e;
+    border: 1px solid rgba(138, 43, 226, 0.3);
+    border-radius: 12px;
+    width: 90%;
+    max-width: 600px;
+    max-height: 90vh;
+    overflow-y: auto;
+    position: relative;
+    box-shadow: 0 0 30px rgba(138, 43, 226, 0.2);
+    animation: scaleIn 0.3s ease;
+}
+
+.modal-close {
+    position: absolute;
+    top: 15px;
+    right: 15px;
+    background: none;
+    border: none;
+    color: #a0a0b0;
+    font-size: 24px;
+    cursor: pointer;
+    transition: color 0.2s;
+    z-index: 10;
+}
+
+.modal-close:hover {
+    color: #fff;
+}
+
+.profile-header {
+    padding: 30px;
+    background: linear-gradient(180deg, rgba(138, 43, 226, 0.1) 0%, transparent 100%);
+    text-align: center;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.profile-avatar {
+    width: 100px;
+    height: 100px;
+    background-color: #2a2a40;
+    border-radius: 50%;
+    margin: 0 auto 15px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-size: 40px;
+    color: #8a2be2;
+    border: 2px solid #8a2be2;
+}
+
+.profile-nick {
+    margin: 0;
+    font-size: 24px;
+    color: #fff;
+    font-weight: 700;
+}
+
+.profile-realname {
+    margin: 5px 0 0;
+    color: #a0a0b0;
+    font-size: 14px;
+}
+
+.profile-lane {
+    display: inline-block;
+    margin-top: 10px;
+    padding: 4px 12px;
+    background-color: rgba(138, 43, 226, 0.2);
+    border-radius: 20px;
+    color: #d8b4fe;
+    font-size: 12px;
+    font-weight: 600;
+}
+
+.profile-stats {
+    display: flex;
+    justify-content: center;
+    gap: 30px;
+    padding: 20px;
+    background-color: rgba(0, 0, 0, 0.2);
+}
+
+.stat-box {
+    text-align: center;
+}
+
+.stat-number {
+    display: block;
+    font-size: 24px;
+    font-weight: 700;
+    color: #ffd700;
+}
+
+.stat-label {
+    font-size: 12px;
+    color: #a0a0b0;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+.profile-history {
+    padding: 30px;
+}
+
+.profile-history h3 {
+    margin: 0 0 20px;
+    font-size: 18px;
+    color: #fff;
+    border-left: 3px solid #8a2be2;
+    padding-left: 10px;
+}
+
+.history-list {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+.history-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 15px;
+    background-color: rgba(255, 255, 255, 0.03);
+    border-radius: 8px;
+    transition: background-color 0.2s;
+}
+
+.history-item:hover {
+    background-color: rgba(255, 255, 255, 0.05);
+}
+
+.history-info {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.history-team {
+    font-weight: 600;
+    color: #fff;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.captain-mark {
+    font-size: 12px;
+    color: #ffd700;
+    background-color: rgba(255, 215, 0, 0.1);
+    padding: 2px 6px;
+    border-radius: 4px;
+}
+
+.history-edition {
+    font-size: 13px;
+    color: #a0a0b0;
+}
+
+.history-trophy {
+    font-size: 20px;
+    opacity: 0.3; /* Ativo se fosse campeão nessa edição específica - lógica futura */
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+@keyframes scaleIn {
+    from { transform: scale(0.9); opacity: 0; }
+    to { transform: scale(1); opacity: 1; }
+}
