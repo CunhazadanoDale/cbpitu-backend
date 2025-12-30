@@ -22,7 +22,9 @@ public class TimeService {
     private final TimeRepository timeRepository;
     private final JogadorRepository jogadorRepository;
     private final CampeonatoRepository campeonatoRepository;
-    private final oficial.cbpitu.repository.EscalacaoRepository escalacaoRepository; // [NEW]
+    private final oficial.cbpitu.repository.EscalacaoRepository escalacaoRepository;
+    private final oficial.cbpitu.repository.PartidaRepository partidaRepository;
+    private final oficial.cbpitu.repository.GrupoRepository grupoRepository;
 
     public List<Time> listarTodos() {
         return timeRepository.findAll();
@@ -118,7 +120,25 @@ public class TimeService {
     public void deletar(Long id) {
         Time time = buscarOuFalhar(id);
 
-        // Remove o time de todos os campeonatos em que está inscrito
+        // 1. Remover de Confrontos/Partidas (Histórico de jogos se perde ou vira null?)
+        // Decisão: Deletar partidas para manter integridade, pois partida com time null quebraria muita coisa
+        List<oficial.cbpitu.model.Partida> partidas = partidaRepository.findByTimeId(id);
+        partidaRepository.deleteAll(partidas);
+
+        // 2. Remover de Grupos
+        List<oficial.cbpitu.model.Grupo> gruposComTime = grupoRepository.findAll().stream()
+                .filter(g -> g.getTimes().contains(time))
+                .toList();
+        for (oficial.cbpitu.model.Grupo g : gruposComTime) {
+            g.removerTime(time);
+            grupoRepository.save(g);
+        }
+
+        // 3. Remover de Escalações (Histórico de roster)
+        List<oficial.cbpitu.model.Escalacao> escalacoes = escalacaoRepository.findByTimeId(id);
+        escalacaoRepository.deleteAll(escalacoes);
+
+        // 4. Remove o time de todos os campeonatos em que está inscrito
         List<Campeonato> campeonatos = campeonatoRepository.findByTimeParticipante(id);
         for (Campeonato campeonato : campeonatos) {
             campeonato.removerTime(time);
@@ -129,7 +149,7 @@ public class TimeService {
             campeonatoRepository.save(campeonato);
         }
 
-        // Limpa os jogadores do time
+        // 5. Limpa os jogadores do time (desassocia)
         time.getJogadores().clear();
         time.setCapitao(null);
         timeRepository.save(time);
