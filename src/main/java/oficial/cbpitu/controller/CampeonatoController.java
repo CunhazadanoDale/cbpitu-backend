@@ -148,4 +148,13 @@ public class CampeonatoController {
         campeonatoService.gerarConfrontosManuais(faseId, confrontos);
         return ResponseEntity.status(HttpStatus.CREATED).build();
     }
+
+    @PostMapping("/{id}/fases/{faseId}/grupos/manual")
+    public ResponseEntity<Void> criarGruposManuais(
+            @PathVariable Long id,
+            @PathVariable Long faseId,
+            @RequestBody List<oficial.cbpitu.dto.GrupoManualDTO> grupos) {
+        campeonatoService.gerarGruposManuais(faseId, grupos);
+        return ResponseEntity.status(HttpStatus.CREATED).build();
+    }
 }

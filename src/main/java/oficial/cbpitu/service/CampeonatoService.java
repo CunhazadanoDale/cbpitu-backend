@@ -281,6 +281,63 @@ public class CampeonatoService {
         }
     }
 
+    @Transactional
+    public void gerarGruposManuais(Long faseId, List<oficial.cbpitu.dto.GrupoManualDTO> gruposManuais) {
+        Fase fase = faseRepository.findById(faseId)
+                .orElseThrow(() -> new RecursoNaoEncontradoException("Fase", faseId));
+
+        if (Boolean.TRUE.equals(fase.getFinalizada())) {
+            throw new OperacaoInvalidaException("Fase já está finalizada");
+        }
+        
+        // Verifica se é realmente uma fase de grupos
+        if (!fase.isGrupos()) {
+             throw new OperacaoInvalidaException("Esta fase não é de grupos");
+        }
+
+        long partidasExistentes = partidaRepository.countByFaseId(fase.getId());
+        if (partidasExistentes > 0) {
+            throw new OperacaoInvalidaException("Partidas já foram geradas para esta fase");
+        }
+        
+        // Verifica se grupos já existem
+        if (fase.getGrupos() != null && !fase.getGrupos().isEmpty()) {
+             // Limpa grupos existentes se não houver partidas (caso raro de retry)
+             grupoRepository.deleteAll(fase.getGrupos());
+             fase.getGrupos().clear();
+        }
+
+        List<Grupo> gruposSalvos = new ArrayList<>();
+        
+        for (oficial.cbpitu.dto.GrupoManualDTO dto : gruposManuais) {
+            Grupo grupo = new Grupo();
+            grupo.setNome(dto.getNome());
+            grupo.setFase(fase);
+            
+            for (Long timeId : dto.getTimesIds()) {
+                Time time = timeRepository.findById(timeId)
+                    .orElseThrow(() -> new RecursoNaoEncontradoException("Time", timeId));
+                grupo.adicionarTime(time);
+            }
+            
+            gruposSalvos.add(grupoRepository.save(grupo));
+        }
+        
+        // Gera partidas usando a strategy existente
+        if (getStrategy(fase.getFormato()) instanceof FaseDeGruposStrategy gruposStrategy) {
+            List<Partida> partidas = gruposStrategy.gerarPartidasParaGrupos(gruposSalvos, fase);
+            partidaRepository.saveAll(partidas);
+        }
+        
+        // Atualiza status do campeonato
+        Campeonato campeonato = fase.getCampeonato();
+        if (campeonato.getStatus() == StatusCampeonato.INSCRICOES_ENCERRADAS || 
+            campeonato.getStatus() == StatusCampeonato.INSCRICOES_ABERTAS) {
+            campeonato.setStatus(StatusCampeonato.EM_ANDAMENTO);
+            campeonatoRepository.save(campeonato);
+        }
+    }
+
     // Lógica de Avanço Automático
 
     @Transactional
