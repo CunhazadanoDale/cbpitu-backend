@@ -275,6 +275,60 @@ function Admin() {
         }
     }
 
+    // Manual Matchmaking API
+    const [manualMatchMode, setManualMatchMode] = useState(false)
+    const [manualPairs, setManualPairs] = useState([])
+    const [targetFaseId, setTargetFaseId] = useState(null)
+
+    const startManualMatchmaking = (faseId) => {
+        setTargetFaseId(faseId)
+        setManualMatchMode(true)
+        // Inicializa com um par vazio
+        setManualPairs([{ time1Id: '', time2Id: '' }])
+    }
+
+    const addManualPair = () => {
+        setManualPairs([...manualPairs, { time1Id: '', time2Id: '' }])
+    }
+
+    const removeManualPair = (index) => {
+        const updated = [...manualPairs]
+        updated.splice(index, 1)
+        setManualPairs(updated)
+    }
+
+    const updateManualPair = (index, field, value) => {
+        const updated = [...manualPairs]
+        updated[index] = { ...updated[index], [field]: value }
+        setManualPairs(updated)
+    }
+
+    const submitManualMatches = async () => {
+        try {
+            // Validate
+            const invalidPairs = manualPairs.some(p => !p.time1Id || !p.time2Id || p.time1Id === p.time2Id)
+            if (invalidPairs) {
+                showError('Preencha todos os pares com times diferentes.')
+                return
+            }
+
+            // Convert to DTO format (ensure IDs are numbers)
+            const payload = manualPairs.map(p => ({
+                time1Id: Number(p.time1Id),
+                time2Id: Number(p.time2Id)
+            }))
+
+            await campeonatosApi.criarConfrontosManuais(selectedCampeonato.id, targetFaseId, payload)
+            showSuccess('Confrontos criados manualmente!')
+            setManualMatchMode(false)
+            loadData()
+            const updated = await campeonatosApi.buscarPorId(selectedCampeonato.id)
+            setSelectedCampeonato(updated)
+        } catch (err) {
+            showError(err)
+        }
+    }
+
     // ==================== Edições ====================
     const criarEdicao = async (e) => {
         e.preventDefault()
@@ -570,13 +624,70 @@ function Admin() {
                                     {/* Fases */}
                                     <div className="detail-section">
                                         <h4>Fases ({selectedCampeonato.fases?.length || 0})</h4>
+
+                                        {/* Manual Matchmaking UI */}
+                                        {manualMatchMode && (
+                                            <div className="manual-match-panel">
+                                                <h5>⚔️ Definir Confrontos Manualmente</h5>
+                                                <p className="hint-text">Selecione os times para cada confronto.</p>
+
+                                                {manualPairs.map((pair, idx) => (
+                                                    <div key={idx} className="manual-pair-row">
+                                                        <span className="pair-label">Jogo {idx + 1}</span>
+                                                        <select
+                                                            value={pair.time1Id}
+                                                            onChange={(e) => updateManualPair(idx, 'time1Id', e.target.value)}
+                                                        >
+                                                            <option value="">Time 1</option>
+                                                            {selectedCampeonato.timesParticipantes?.map(t => (
+                                                                <option key={t.id} value={t.id}>{t.nomeTime}</option>
+                                                            ))}
+                                                        </select>
+                                                        <span>VS</span>
+                                                        <select
+                                                            value={pair.time2Id}
+                                                            onChange={(e) => updateManualPair(idx, 'time2Id', e.target.value)}
+                                                        >
+                                                            <option value="">Time 2</option>
+                                                            {selectedCampeonato.timesParticipantes?.map(t => (
+                                                                <option key={t.id} value={t.id}>{t.nomeTime}</option>
+                                                            ))}
+                                                        </select>
+                                                        <button onClick={() => removeManualPair(idx)} className="btn-icon">❌</button>
+                                                    </div>
+                                                ))}
+
+                                                <div className="manual-actions">
+                                                    <button onClick={addManualPair} className="btn btn-sm btn-outline">+ Adicionar Jogo</button>
+                                                    <div className="manual-submit-group">
+                                                        <button onClick={() => setManualMatchMode(false)} className="btn btn-sm">Cancelar</button>
+                                                        <button onClick={submitManualMatches} className="btn btn-sm btn-primary">Confirmar Jogos</button>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        )}
+
                                         {selectedCampeonato.fases?.map((f, i) => (
                                             <div key={i} className="fase-item">
-                                                <span>{f.nome}</span>
-                                                <span className="badge-sm">{f.formato}</span>
-                                                <span className={f.finalizada ? 'status-done' : 'status-pending'}>
-                                                    {f.finalizada ? '✅' : '⏳'}
-                                                </span>
+                                                <div className="fase-info">
+                                                    <span>{f.nome}</span>
+                                                    <span className="badge-sm">{f.formato}</span>
+                                                </div>
+                                                <div className="fase-actions">
+                                                    <span className={f.finalizada ? 'status-done' : 'status-pending'}>
+                                                        {f.finalizada ? '✅ Finalizada' : '⏳ Pendente'}
+                                                    </span>
+                                                    {!f.finalizada && !manualMatchMode &&
+                                                        (f.formato.startsWith('MATA_MATA') || f.formato === 'LOSER_BRACKET') && (
+                                                            <button
+                                                                onClick={() => startManualMatchmaking(f.id)}
+                                                                className="btn-xs btn-outline"
+                                                                title="Definir confrontos manualmente"
+                                                            >
+                                                                🛠️ Manual
+                                                            </button>
+                                                        )}
+                                                </div>
                                             </div>
                                         ))}
 
