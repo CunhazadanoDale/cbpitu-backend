@@ -10,6 +10,8 @@ import Admin from './pages/Admin/Admin'
 import Campeonato from './pages/Campeonato/Campeonato'
 import EdicaoDetalhe from './pages/EdicaoDetalhe/EdicaoDetalhe'
 
+import TimesPage from './pages/Times/TimesPage'
+
 function LandingPage() {
   return (
     <>
@@ -31,6 +33,7 @@ function App() {
     <BrowserRouter>
       <Routes>
         <Route path="/" element={<LandingPage />} />
+        <Route path="/times" element={<TimesPage />} />
         <Route path="/admin" element={<Admin />} />
         <Route path="/campeonato/:id" element={<Campeonato />} />
         <Route path="/edicao/:id" element={<EdicaoDetalhe />} />

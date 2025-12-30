@@ -71,33 +71,40 @@ export const jogadoresApi = {
 export const timesApi = {
     listar: () => request('/times'),
 
+    listarPaginado: (page = 0, size = 12) => request(`/times/paginado?page=${page}&size=${size}&sort=trofeus,desc`),
+
+    listarTop: () => request('/times/top'),
+
+    buscarDetalhes: (id) => request(`/times/${id}/detalhes`),
+
     buscarPorId: (id) => request(`/times/${id}`),
 
-    criar: (time) => request('/times', {
+    criar: (dados) => request('/times', {
         method: 'POST',
-        body: JSON.stringify(time),
+        body: JSON.stringify(dados)
     }),
 
-    atualizar: (id, time) => request(`/times/${id}`, {
+    atualizar: (id, dados) => request(`/times/${id}`, {
         method: 'PUT',
-        body: JSON.stringify(time),
+        body: JSON.stringify(dados)
     }),
 
     deletar: (id) => request(`/times/${id}`, {
-        method: 'DELETE',
+        method: 'DELETE'
     }),
 
+    // Gerenciamento de jogadores
     adicionarJogador: (timeId, jogadorId) => request(`/times/${timeId}/jogadores/${jogadorId}`, {
-        method: 'POST',
+        method: 'POST'
     }),
 
     removerJogador: (timeId, jogadorId) => request(`/times/${timeId}/jogadores/${jogadorId}`, {
-        method: 'DELETE',
+        method: 'DELETE'
     }),
 
     definirCapitao: (timeId, jogadorId) => request(`/times/${timeId}/capitao/${jogadorId}`, {
-        method: 'PUT',
-    }),
+        method: 'PUT'
+    })
 };
 
 // ==================== Campeonatos ====================

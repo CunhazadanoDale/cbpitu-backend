@@ -29,7 +29,10 @@ function PlayerProfileModal({ jogadorId, onClose }) {
     if (!jogadorId) return null
 
     return (
-        <div className="modal-overlay" onClick={onClose}>
+        <div className="modal-overlay" onClick={(e) => {
+            e.stopPropagation()
+            onClose()
+        }}>
             <div className="modal-content" onClick={e => e.stopPropagation()}>
                 <button className="modal-close" onClick={onClose}>&times;</button>
 
