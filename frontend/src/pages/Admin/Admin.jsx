@@ -70,12 +70,30 @@ function Admin() {
     }
 
     // ==================== Jogadores ====================
+    const [editingPlayer, setEditingPlayer] = useState(null)
+
     const criarJogador = async (e) => {
         e.preventDefault()
         try {
             await jogadoresApi.criar(novoJogador)
             setNovoJogador({ nickname: '', nomeReal: '', laneLol: 'MID' })
             showSuccess('Jogador criado com sucesso!')
+            loadData()
+        } catch (err) {
+            showError(err)
+        }
+    }
+
+    const iniciarEdicaoJogador = (jogador) => {
+        setEditingPlayer({ ...jogador })
+    }
+
+    const salvarEdicaoJogador = async (e) => {
+        e.preventDefault()
+        try {
+            await jogadoresApi.atualizar(editingPlayer.id, editingPlayer)
+            setEditingPlayer(null)
+            showSuccess('Jogador atualizado com sucesso!')
             loadData()
         } catch (err) {
             showError(err)
@@ -91,6 +109,111 @@ function Admin() {
         } catch (err) {
             showError(err)
         }
+    }
+
+    // ... (rest of the file) ...
+
+    {/* ==================== JOGADORES ==================== */ }
+    {
+        activeTab === 'jogadores' && (
+            <div className="tab-content">
+                <div className="form-section">
+                    <h3>Criar Jogador</h3>
+                    <form onSubmit={criarJogador}>
+                        <input type="text" placeholder="Nickname" value={novoJogador.nickname}
+                            onChange={(e) => setNovoJogador({ ...novoJogador, nickname: e.target.value })} required />
+                        <input type="text" placeholder="Nome Real" value={novoJogador.nomeReal}
+                            onChange={(e) => setNovoJogador({ ...novoJogador, nomeReal: e.target.value })} />
+                        <select value={novoJogador.laneLol} onChange={(e) => setNovoJogador({ ...novoJogador, laneLol: e.target.value })}>
+                            {lanes.map(lane => <option key={lane} value={lane}>{lane}</option>)}
+                        </select>
+                        <button type="submit" className="btn btn-primary">Criar Jogador</button>
+                    </form>
+                </div>
+                <div className="list-section" style={{ border: '5px solid red' }}>
+                    <h3>Jogadores Cadastrados (DEBUG MODE)</h3>
+                    {jogadores.length === 0 ? <p className="empty">Nenhum jogador</p> : (
+                        <div className="data-grid">
+                            {jogadores.map(j => (
+                                <div
+                                    key={j.id}
+                                    className="data-card"
+                                    onClick={() => iniciarEdicaoJogador(j)}
+                                    style={{ cursor: 'pointer', position: 'relative' }}
+                                    title="Clique para editar"
+                                >
+                                    <div className="data-card-header">
+                                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                            <strong>{j.nickname}</strong>
+                                            <span style={{ fontSize: '0.8rem', opacity: 0.7 }}>✏️</span>
+                                        </div>
+                                        <span className="badge">{j.laneLol}</span>
+                                    </div>
+                                    <p>{j.nomeReal || '-'}</p>
+
+                                    {/* Botão de Excluir isolado no canto inferior direito */}
+                                    <div className="card-actions" style={{ marginTop: '8px', borderTop: '1px solid rgba(255,255,255,0.1)', paddingTop: '8px' }}>
+                                        <button
+                                            onClick={(e) => {
+                                                e.stopPropagation();
+                                                deletarJogador(j.id);
+                                            }}
+                                            className="btn-icon"
+                                            title="Excluir Jogador"
+                                            style={{ marginLeft: 'auto', display: 'block' }}
+                                        >
+                                            🗑️
+                                        </button>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    )}
+                </div>
+
+                {/* Edit Player Modal */}
+                {editingPlayer && (
+                    <div className="modal-overlay">
+                        <div className="modal-content">
+                            <button className="modal-close" onClick={() => setEditingPlayer(null)}>×</button>
+                            <h3>Editar Jogador</h3>
+                            <form onSubmit={salvarEdicaoJogador}>
+                                <div className="form-group">
+                                    <label>Nickname</label>
+                                    <input
+                                        type="text"
+                                        value={editingPlayer.nickname}
+                                        onChange={(e) => setEditingPlayer({ ...editingPlayer, nickname: e.target.value })}
+                                        required
+                                    />
+                                </div>
+                                <div className="form-group">
+                                    <label>Nome Real</label>
+                                    <input
+                                        type="text"
+                                        value={editingPlayer.nomeReal}
+                                        onChange={(e) => setEditingPlayer({ ...editingPlayer, nomeReal: e.target.value })}
+                                    />
+                                </div>
+                                <div className="form-group">
+                                    <label>Lane (LoL)</label>
+                                    <select
+                                        value={editingPlayer.laneLol}
+                                        onChange={(e) => setEditingPlayer({ ...editingPlayer, laneLol: e.target.value })}
+                                    >
+                                        {lanes.map(lane => <option key={lane} value={lane}>{lane}</option>)}
+                                    </select>
+                                </div>
+                                <div className="modal-actions">
+                                    <button type="button" onClick={() => setEditingPlayer(null)} className="btn btn-secondary">Cancelar</button>
+                                    <button type="submit" className="btn btn-primary">Salvar</button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                )}
+            </div>
+        )
     }
 
     // ==================== Times ====================
@@ -475,18 +598,74 @@ function Admin() {
                             {jogadores.length === 0 ? <p className="empty">Nenhum jogador</p> : (
                                 <div className="data-grid">
                                     {jogadores.map(j => (
-                                        <div key={j.id} className="data-card">
+                                        <div
+                                            key={j.id}
+                                            className="data-card"
+                                            onClick={() => iniciarEdicaoJogador(j)}
+                                            style={{ cursor: 'pointer' }}
+                                            title="Clique para editar"
+                                        >
                                             <div className="data-card-header">
                                                 <strong>{j.nickname}</strong>
                                                 <span className="badge">{j.laneLol}</span>
                                             </div>
                                             <p>{j.nomeReal || '-'}</p>
-                                            <button onClick={() => deletarJogador(j.id)} className="btn-delete">🗑️</button>
+                                            <div className="card-actions">
+                                                <button
+                                                    onClick={(e) => { e.stopPropagation(); deletarJogador(j.id); }}
+                                                    className="btn-delete"
+                                                    title="Excluir"
+                                                >
+                                                    🗑️
+                                                </button>
+                                            </div>
                                         </div>
                                     ))}
                                 </div>
                             )}
                         </div>
+
+                        {/* Modal de Edição de Jogador */}
+                        {editingPlayer && (
+                            <div className="modal-overlay" onClick={() => setEditingPlayer(null)}>
+                                <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+                                    <button className="modal-close" onClick={() => setEditingPlayer(null)}>×</button>
+                                    <h3>Editar Jogador</h3>
+                                    <form onSubmit={salvarEdicaoJogador}>
+                                        <div className="form-group">
+                                            <label>Nickname</label>
+                                            <input
+                                                type="text"
+                                                value={editingPlayer.nickname}
+                                                onChange={(e) => setEditingPlayer({ ...editingPlayer, nickname: e.target.value })}
+                                                required
+                                            />
+                                        </div>
+                                        <div className="form-group">
+                                            <label>Nome Real</label>
+                                            <input
+                                                type="text"
+                                                value={editingPlayer.nomeReal || ''}
+                                                onChange={(e) => setEditingPlayer({ ...editingPlayer, nomeReal: e.target.value })}
+                                            />
+                                        </div>
+                                        <div className="form-group">
+                                            <label>Lane (LoL)</label>
+                                            <select
+                                                value={editingPlayer.laneLol}
+                                                onChange={(e) => setEditingPlayer({ ...editingPlayer, laneLol: e.target.value })}
+                                            >
+                                                {lanes.map(lane => <option key={lane} value={lane}>{lane}</option>)}
+                                            </select>
+                                        </div>
+                                        <div className="modal-actions">
+                                            <button type="button" onClick={() => setEditingPlayer(null)} className="btn btn-secondary">Cancelar</button>
+                                            <button type="submit" className="btn btn-primary">Salvar</button>
+                                        </div>
+                                    </form>
+                                </div>
+                            </div>
+                        )}
                     </div>
                 )}
 
