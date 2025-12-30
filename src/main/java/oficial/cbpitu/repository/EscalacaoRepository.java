@@ -19,4 +19,6 @@ public interface EscalacaoRepository extends JpaRepository<Escalacao, Long> {
     boolean existsByTimeIdAndEdicaoId(Long timeId, Long edicaoId);
     
     List<Escalacao> findByJogadoresId(Long jogadorId);
+    
+    List<Escalacao> findByTimeId(Long timeId);
 }
