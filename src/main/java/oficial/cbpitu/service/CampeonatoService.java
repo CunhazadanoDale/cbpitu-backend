@@ -208,11 +208,8 @@ public class CampeonatoService {
 
         // Se for fase de grupos, cria e salva os grupos primeiro
         if (fase.isGrupos() && strategy instanceof FaseDeGruposStrategy gruposStrategy) {
-            // Verifica se grupos já existem (redundância necessária pois grupos sem
-            // partidas são raros mas possíveis)
+            // Verifica se grupos já existem
             if (fase.getGrupos() != null && !fase.getGrupos().isEmpty()) {
-                // Usa grupos existentes? Ou limpa?
-                // Melhor assumir que se existem grupos, a fase já foi iniciada.
                 return;
             }
 
@@ -226,6 +223,62 @@ public class CampeonatoService {
         }
 
         partidaRepository.saveAll(partidas);
+    }
+
+    @Transactional
+    public void gerarConfrontosManuais(Long faseId, List<oficial.cbpitu.dto.ParConfrontoDTO> confrontos) {
+        Fase fase = faseRepository.findById(faseId)
+                .orElseThrow(() -> new RecursoNaoEncontradoException("Fase", faseId));
+
+        if (Boolean.TRUE.equals(fase.getFinalizada())) {
+            throw new OperacaoInvalidaException("Fase já está finalizada");
+        }
+
+        long partidasExistentes = partidaRepository.countByFaseId(fase.getId());
+        if (partidasExistentes > 0) {
+            throw new OperacaoInvalidaException("Confrontos já foram gerados para esta fase");
+        }
+
+        List<Partida> partidas = new ArrayList<>();
+        int rodada = 1;
+        int numPartidas = confrontos.size();
+        
+        // Determina nome da fase (Final, Semis, etc)
+        // Lógica simplificada baseada no mata-mata strategy
+        String nomeFase = "RODADA DE " + (numPartidas * 2);
+        if (numPartidas == 1) nomeFase = "FINAL";
+        else if (numPartidas == 2) nomeFase = "SEMIFINAL";
+        else if (numPartidas == 4) nomeFase = "QUARTAS";
+        else if (numPartidas == 8) nomeFase = "OITAVAS";
+
+        for (int i = 0; i < confrontos.size(); i++) {
+            oficial.cbpitu.dto.ParConfrontoDTO par = confrontos.get(i);
+            
+            Time time1 = timeRepository.findById(par.getTime1Id())
+                    .orElseThrow(() -> new RecursoNaoEncontradoException("Time", par.getTime1Id()));
+            Time time2 = timeRepository.findById(par.getTime2Id())
+                    .orElseThrow(() -> new RecursoNaoEncontradoException("Time", par.getTime2Id()));
+
+            Partida partida = new Partida();
+            partida.setTime1(time1);
+            partida.setTime2(time2);
+            partida.setFase(fase);
+            partida.setRodada(rodada);
+            partida.setStatus(StatusPartida.PENDENTE);
+            partida.setIdentificadorBracket(nomeFase + " " + (i + 1));
+            
+            partidas.add(partida);
+        }
+
+        partidaRepository.saveAll(partidas);
+        
+        // Atualiza status do campeonato se necessário
+        Campeonato campeonato = fase.getCampeonato();
+        if (campeonato.getStatus() == StatusCampeonato.INSCRICOES_ENCERRADAS || 
+            campeonato.getStatus() == StatusCampeonato.INSCRICOES_ABERTAS) {
+            campeonato.setStatus(StatusCampeonato.EM_ANDAMENTO);
+            campeonatoRepository.save(campeonato);
+        }
     }
 
     // Lógica de Avanço Automático

@@ -139,4 +139,13 @@ public class CampeonatoController {
         var tabela = classificacaoService.getTabelaGrupo(grupoId);
         return ResponseEntity.ok(classificacaoMapper.toDTOList(tabela));
     }
+
+    @PostMapping("/{id}/fases/{faseId}/partidas/manual")
+    public ResponseEntity<Void> criarConfrontosManuais(
+            @PathVariable Long id,
+            @PathVariable Long faseId,
+            @RequestBody List<oficial.cbpitu.dto.ParConfrontoDTO> confrontos) {
+        campeonatoService.gerarConfrontosManuais(faseId, confrontos);
+        return ResponseEntity.status(HttpStatus.CREATED).build();
+    }
 }
