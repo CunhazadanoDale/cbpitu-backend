@@ -126,6 +126,11 @@ public class FaseDeGruposStrategy implements GeradorDeConfrontos {
     public List<Time> calcularClassificados(Fase fase) {
         List<Time> classificados = new ArrayList<>();
 
+        System.out.println("=== calcularClassificados (FaseDeGruposStrategy) ===");
+        System.out.println("Fase ID: " + fase.getId() + ", Nome: " + fase.getNome());
+        System.out.println("classificadosNecessarios: " + fase.getClassificadosNecessarios());
+        System.out.println("Numero de grupos: " + (fase.getGrupos() != null ? fase.getGrupos().size() : 0));
+
         // Calcula quantos classificados por grupo
         // Se a divisão der 0 (ex: 1 vaga / 2 grupos), assume o padrão de 2 por grupo
         int classificadosPorGrupo = fase.getClassificadosNecessarios() != null
@@ -136,19 +141,26 @@ public class FaseDeGruposStrategy implements GeradorDeConfrontos {
             classificadosPorGrupo = 2;
         }
 
+        System.out.println("classificadosPorGrupo calculado: " + classificadosPorGrupo);
+
         if (fase.getGrupos() == null)
             return classificados;
 
         for (Grupo grupo : fase.getGrupos()) {
+            System.out.println("Processando grupo: " + grupo.getNome() + " (ID: " + grupo.getId() + ")");
             List<Partida> partidasDoGrupo = partidaRepository.findByGrupoId(grupo.getId());
+            System.out.println("  Partidas no grupo: " + partidasDoGrupo.size());
             List<ClassificacaoGrupo> tabela = calcularTabelaGrupo(grupo, partidasDoGrupo);
+            System.out.println("  Tabela calculada com " + tabela.size() + " times");
 
             // Pega os N melhores de cada grupo
             for (int i = 0; i < Math.min(classificadosPorGrupo, tabela.size()); i++) {
+                System.out.println("  Adicionando classificado: " + tabela.get(i).getTime().getNomeTime());
                 classificados.add(tabela.get(i).getTime());
             }
         }
 
+        System.out.println("Total classificados: " + classificados.size());
         return classificados;
     }
 
