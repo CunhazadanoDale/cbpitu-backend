@@ -27,6 +27,24 @@ public class TimeController {
         return ResponseEntity.ok(
                 timeMapper.toDTOList(timeService.listarTodos()));
     }
+    
+    @GetMapping("/paginado")
+    public ResponseEntity<org.springframework.data.domain.Page<TimeDTO>> listarPaginado(
+            @org.springframework.data.web.PageableDefault(size = 12, sort = "nomeTime") org.springframework.data.domain.Pageable pageable) {
+        return ResponseEntity.ok(
+                timeService.listarPaginado(pageable).map(timeMapper::toDTO));
+    }
+    
+    @GetMapping("/top")
+    public ResponseEntity<List<TimeDTO>> listarTop() {
+        return ResponseEntity.ok(
+                timeMapper.toDTOList(timeService.listarTop()));
+    }
+    
+    @GetMapping("/{id}/detalhes")
+    public ResponseEntity<oficial.cbpitu.dto.TimeDetalhesDTO> buscarDetalhes(@PathVariable Long id) {
+        return ResponseEntity.ok(timeService.buscarDetalhes(id));
+    }
 
     @GetMapping("/{id}")
     public ResponseEntity<TimeDTO> buscarPorId(@PathVariable Long id) {
