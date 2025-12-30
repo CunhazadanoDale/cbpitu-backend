@@ -275,16 +275,28 @@ function Admin() {
         }
     }
 
-    // Manual Matchmaking API
+    // Manual Matchmaking API (Pairs & Groups)
     const [manualMatchMode, setManualMatchMode] = useState(false)
     const [manualPairs, setManualPairs] = useState([])
-    const [targetFaseId, setTargetFaseId] = useState(null)
+    const [manualGroups, setManualGroups] = useState([]) // [{ nome: 'Grupo A', timesIds: [] }]
+    const [targetFase, setTargetFase] = useState(null) // Stores full phase object
 
-    const startManualMatchmaking = (faseId) => {
-        setTargetFaseId(faseId)
+    const startManualMatchmaking = (fase) => {
+        setTargetFase(fase)
         setManualMatchMode(true)
-        // Inicializa com um par vazio
-        setManualPairs([{ time1Id: '', time2Id: '' }])
+
+        if (fase.formato.startsWith('MATA_MATA') || fase.formato === 'LOSER_BRACKET') {
+            // Inicializa com um par vazio
+            setManualPairs([{ time1Id: '', time2Id: '' }])
+            setManualGroups([])
+        } else if (fase.formato.startsWith('GRUPOS')) {
+            // Inicializa com 2 grupos padrão
+            setManualGroups([
+                { nome: 'Grupo A', timesIds: [] },
+                { nome: 'Grupo B', timesIds: [] }
+            ])
+            setManualPairs([])
+        }
     }
 
     const addManualPair = () => {
@@ -303,23 +315,74 @@ function Admin() {
         setManualPairs(updated)
     }
 
+    // Gerenciamento de Grupos Manuais
+    const addManualGroup = () => {
+        const nextLetter = String.fromCharCode(65 + manualGroups.length); // A, B, C...
+        setManualGroups([...manualGroups, { nome: `Grupo ${nextLetter}`, timesIds: [] }])
+    }
+
+    const removeManualGroup = (index) => {
+        const updated = [...manualGroups]
+        updated.splice(index, 1)
+        setManualGroups(updated)
+    }
+
+    const updateGroupName = (index, name) => {
+        const updated = [...manualGroups]
+        updated[index] = { ...updated[index], nome: name }
+        setManualGroups(updated)
+    }
+
+    const toggleTeamInGroup = (groupIndex, timeId) => {
+        const updated = [...manualGroups]
+        const group = updated[groupIndex]
+        const id = Number(timeId)
+
+        if (group.timesIds.includes(id)) {
+            // Remove
+            group.timesIds = group.timesIds.filter(tid => tid !== id)
+        } else {
+            // Add (check if already in another group first? Optional, but good UX)
+            // Remove from other groups to ensure uniqueness
+            updated.forEach(g => {
+                g.timesIds = g.timesIds.filter(tid => tid !== id)
+            })
+            group.timesIds.push(id)
+        }
+        setManualGroups(updated)
+    }
+
     const submitManualMatches = async () => {
         try {
-            // Validate
-            const invalidPairs = manualPairs.some(p => !p.time1Id || !p.time2Id || p.time1Id === p.time2Id)
-            if (invalidPairs) {
-                showError('Preencha todos os pares com times diferentes.')
-                return
+            if (targetFase.formato.startsWith('MATA_MATA') || targetFase.formato === 'LOSER_BRACKET') {
+                // Validate Pairs
+                const invalidPairs = manualPairs.some(p => !p.time1Id || !p.time2Id || p.time1Id === p.time2Id)
+                if (invalidPairs) {
+                    showError('Preencha todos os pares com times diferentes.')
+                    return
+                }
+
+                // Convert to DTO format
+                const payload = manualPairs.map(p => ({
+                    time1Id: Number(p.time1Id),
+                    time2Id: Number(p.time2Id)
+                }))
+
+                await campeonatosApi.criarConfrontosManuais(selectedCampeonato.id, targetFase.id, payload)
+                showSuccess('Confrontos criados manualmente!')
+
+            } else if (targetFase.formato.startsWith('GRUPOS')) {
+                // Validate Groups
+                const invalidGroups = manualGroups.some(g => g.timesIds.length < 2)
+                if (invalidGroups) {
+                    showError('Cada grupo deve ter pelo menos 2 times.')
+                    return
+                }
+
+                await campeonatosApi.criarGruposManuais(selectedCampeonato.id, targetFase.id, manualGroups)
+                showSuccess('Grupos criados manualmente!')
             }
 
-            // Convert to DTO format (ensure IDs are numbers)
-            const payload = manualPairs.map(p => ({
-                time1Id: Number(p.time1Id),
-                time2Id: Number(p.time2Id)
-            }))
-
-            await campeonatosApi.criarConfrontosManuais(selectedCampeonato.id, targetFaseId, payload)
-            showSuccess('Confrontos criados manualmente!')
             setManualMatchMode(false)
             loadData()
             const updated = await campeonatosApi.buscarPorId(selectedCampeonato.id)
@@ -628,42 +691,95 @@ function Admin() {
                                         {/* Manual Matchmaking UI */}
                                         {manualMatchMode && (
                                             <div className="manual-match-panel">
-                                                <h5>⚔️ Definir Confrontos Manualmente</h5>
-                                                <p className="hint-text">Selecione os times para cada confronto.</p>
 
-                                                {manualPairs.map((pair, idx) => (
-                                                    <div key={idx} className="manual-pair-row">
-                                                        <span className="pair-label">Jogo {idx + 1}</span>
-                                                        <select
-                                                            value={pair.time1Id}
-                                                            onChange={(e) => updateManualPair(idx, 'time1Id', e.target.value)}
-                                                        >
-                                                            <option value="">Time 1</option>
-                                                            {selectedCampeonato.timesParticipantes?.map(t => (
-                                                                <option key={t.id} value={t.id}>{t.nomeTime}</option>
-                                                            ))}
-                                                        </select>
-                                                        <span>VS</span>
-                                                        <select
-                                                            value={pair.time2Id}
-                                                            onChange={(e) => updateManualPair(idx, 'time2Id', e.target.value)}
-                                                        >
-                                                            <option value="">Time 2</option>
-                                                            {selectedCampeonato.timesParticipantes?.map(t => (
-                                                                <option key={t.id} value={t.id}>{t.nomeTime}</option>
-                                                            ))}
-                                                        </select>
-                                                        <button onClick={() => removeManualPair(idx)} className="btn-icon">❌</button>
-                                                    </div>
-                                                ))}
+                                                {/* UI para MATA-MATA */}
+                                                {(targetFase.formato.startsWith('MATA_MATA') || targetFase.formato === 'LOSER_BRACKET') && (
+                                                    <>
+                                                        <h5>⚔️ Definir Confrontos Manualmente</h5>
+                                                        <p className="hint-text">Selecione os times para cada confronto.</p>
 
-                                                <div className="manual-actions">
-                                                    <button onClick={addManualPair} className="btn btn-sm btn-outline">+ Adicionar Jogo</button>
-                                                    <div className="manual-submit-group">
-                                                        <button onClick={() => setManualMatchMode(false)} className="btn btn-sm">Cancelar</button>
-                                                        <button onClick={submitManualMatches} className="btn btn-sm btn-primary">Confirmar Jogos</button>
-                                                    </div>
-                                                </div>
+                                                        {manualPairs.map((pair, idx) => (
+                                                            <div key={idx} className="manual-pair-row">
+                                                                <span className="pair-label">Jogo {idx + 1}</span>
+                                                                <select
+                                                                    value={pair.time1Id}
+                                                                    onChange={(e) => updateManualPair(idx, 'time1Id', e.target.value)}
+                                                                >
+                                                                    <option value="">Time 1</option>
+                                                                    {selectedCampeonato.timesParticipantes?.map(t => (
+                                                                        <option key={t.id} value={t.id}>{t.nomeTime}</option>
+                                                                    ))}
+                                                                </select>
+                                                                <span>VS</span>
+                                                                <select
+                                                                    value={pair.time2Id}
+                                                                    onChange={(e) => updateManualPair(idx, 'time2Id', e.target.value)}
+                                                                >
+                                                                    <option value="">Time 2</option>
+                                                                    {selectedCampeonato.timesParticipantes?.map(t => (
+                                                                        <option key={t.id} value={t.id}>{t.nomeTime}</option>
+                                                                    ))}
+                                                                </select>
+                                                                <button onClick={() => removeManualPair(idx)} className="btn-icon">❌</button>
+                                                            </div>
+                                                        ))}
+
+                                                        <div className="manual-actions">
+                                                            <button onClick={addManualPair} className="btn btn-sm btn-outline">+ Adicionar Jogo</button>
+                                                            <div className="manual-submit-group">
+                                                                <button onClick={() => setManualMatchMode(false)} className="btn btn-sm">Cancelar</button>
+                                                                <button onClick={submitManualMatches} className="btn btn-sm btn-primary">Confirmar Jogos</button>
+                                                            </div>
+                                                        </div>
+                                                    </>
+                                                )}
+
+                                                {/* UI para GRUPOS */}
+                                                {targetFase.formato.startsWith('GRUPOS') && (
+                                                    <>
+                                                        <h5>🔢 Definir Grupos Manualmente</h5>
+                                                        <p className="hint-text">Crie grupos e selecione os times participantes.</p>
+
+                                                        <div className="manual-groups-container">
+                                                            {manualGroups.map((group, idx) => (
+                                                                <div key={idx} className="manual-group-card">
+                                                                    <div className="manual-group-header">
+                                                                        <input
+                                                                            type="text"
+                                                                            value={group.nome}
+                                                                            onChange={(e) => updateGroupName(idx, e.target.value)}
+                                                                            className="group-name-input"
+                                                                        />
+                                                                        <button onClick={() => removeManualGroup(idx)} className="btn-icon">❌</button>
+                                                                    </div>
+                                                                    <div className="manual-group-teams">
+                                                                        {selectedCampeonato.timesParticipantes?.map(t => (
+                                                                            <label key={t.id} className="team-checkbox-row">
+                                                                                <input
+                                                                                    type="checkbox"
+                                                                                    checked={group.timesIds.includes(t.id)}
+                                                                                    onChange={() => toggleTeamInGroup(idx, t.id)}
+                                                                                />
+                                                                                <span>{t.nomeTime}</span>
+                                                                            </label>
+                                                                        ))}
+                                                                    </div>
+                                                                    <div className="group-count">
+                                                                        {group.timesIds.length} times selecionados
+                                                                    </div>
+                                                                </div>
+                                                            ))}
+                                                        </div>
+
+                                                        <div className="manual-actions">
+                                                            <button onClick={addManualGroup} className="btn btn-sm btn-outline">+ Adicionar Grupo</button>
+                                                            <div className="manual-submit-group">
+                                                                <button onClick={() => setManualMatchMode(false)} className="btn btn-sm">Cancelar</button>
+                                                                <button onClick={submitManualMatches} className="btn btn-sm btn-primary">Confirmar Grupos</button>
+                                                            </div>
+                                                        </div>
+                                                    </>
+                                                )}
                                             </div>
                                         )}
 
@@ -678,11 +794,11 @@ function Admin() {
                                                         {f.finalizada ? '✅ Finalizada' : '⏳ Pendente'}
                                                     </span>
                                                     {!f.finalizada && !manualMatchMode &&
-                                                        (f.formato.startsWith('MATA_MATA') || f.formato === 'LOSER_BRACKET') && (
+                                                        (f.formato.startsWith('MATA_MATA') || f.formato === 'LOSER_BRACKET' || f.formato.startsWith('GRUPOS')) && (
                                                             <button
-                                                                onClick={() => startManualMatchmaking(f.id)}
+                                                                onClick={() => startManualMatchmaking(f)}
                                                                 className="btn-xs btn-outline"
-                                                                title="Definir confrontos manualmente"
+                                                                title="Definir manualmente"
                                                             >
                                                                 🛠️ Manual
                                                             </button>

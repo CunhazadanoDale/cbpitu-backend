@@ -158,6 +158,11 @@ export const campeonatosApi = {
         method: 'POST',
         body: JSON.stringify(confrontos),
     }),
+
+    criarGruposManuais: (id, faseId, grupos) => request(`/campeonatos/${id}/fases/${faseId}/grupos/manual`, {
+        method: 'POST',
+        body: JSON.stringify(grupos),
+    }),
 };
 
 // ==================== Partidas ====================

@@ -730,3 +730,78 @@
     border-color: var(--primary);
     color: var(--primary-light);
 }
+
+/* Manual Groups UI */
+.manual-groups-container {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 16px;
+    margin-bottom: 16px;
+}
+
+.manual-group-card {
+    background: var(--bg-darker);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: var(--border-radius);
+    padding: 12px;
+    flex: 1;
+    min-width: 250px;
+}
+
+.manual-group-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 12px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.group-name-input {
+    background: transparent;
+    border: none;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    color: var(--primary-light);
+    font-weight: bold;
+    font-size: 1rem;
+    padding: 4px;
+    width: 70%;
+}
+
+.group-name-input:focus {
+    outline: none;
+    border-color: var(--primary);
+}
+
+.manual-group-teams {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    max-height: 200px;
+    overflow-y: auto;
+}
+
+.team-checkbox-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.9rem;
+    cursor: pointer;
+    padding: 4px;
+    border-radius: 4px;
+}
+
+.team-checkbox-row:hover {
+    background: rgba(255, 255, 255, 0.05);
+}
+
+.team-checkbox-row input[type="checkbox"] {
+    accent-color: var(--primary);
+}
+
+.group-count {
+    margin-top: 12px;
+    font-size: 0.8rem;
+    color: var(--text-muted);
+    text-align: right;
+}
