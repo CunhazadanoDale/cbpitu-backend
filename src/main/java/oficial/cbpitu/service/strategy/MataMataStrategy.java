@@ -19,24 +19,43 @@ public class MataMataStrategy implements GeradorDeConfrontos {
     @Override
     public List<Partida> gerarConfrontos(List<Time> times, Fase fase) {
         List<Partida> partidas = new ArrayList<>();
-        List<Time> timesSorteados = new ArrayList<>(times);
-        Collections.shuffle(timesSorteados);
+        List<Time> timesParaProcessar = new ArrayList<>(times);
 
-        int numTimes = timesSorteados.size();
+        int numTimes = timesParaProcessar.size();
         int rodada = 1;
+        int numPartidas = numTimes / 2;
 
-        // Gera confrontos da primeira rodada
-        for (int i = 0; i < numTimes; i += 2) {
-            Partida partida = new Partida();
-            partida.setTime1(timesSorteados.get(i));
-            partida.setTime2(timesSorteados.get(i + 1));
-            partida.setFase(fase);
-            partida.setRodada(rodada);
-            partida.setStatus(StatusPartida.PENDENTE);
-
-            int numPartidas = numTimes / 2;
-            partida.setIdentificadorBracket(gerarNomeFase(numPartidas) + " " + ((i / 2) + 1));
-            partidas.add(partida);
+        if (fase.getOrdem() > 1) {
+            // Se venho de uma fase anterior (ex: fase de grupos), respeita o seeding
+            // Pareamento: 1º vs Último, 2º vs Penúltimo, etc.
+            // Ex: Em 4 times: 1vs4, 2vs3
+            // Ex: Em 8 times (2 grupos de 4, passam 2): A1, A2, B1, B2, C1, C2, D1, D2
+            //     A1 vs D2, A2 vs D1, B1 vs C2, B2 vs C1
+            
+            for (int i = 0; i < numPartidas; i++) {
+                Partida partida = new Partida();
+                partida.setTime1(timesParaProcessar.get(i));
+                partida.setTime2(timesParaProcessar.get(numTimes - 1 - i));
+                partida.setFase(fase);
+                partida.setRodada(rodada);
+                partida.setStatus(StatusPartida.PENDENTE);
+                partida.setIdentificadorBracket(gerarNomeFase(numPartidas) + " " + (i + 1));
+                partidas.add(partida);
+            }
+        } else {
+            // Se for a primeira fase (só mata-mata), sorteia para evitar ordem de inscrição
+            Collections.shuffle(timesParaProcessar);
+            
+            for (int i = 0; i < numTimes; i += 2) {
+                Partida partida = new Partida();
+                partida.setTime1(timesParaProcessar.get(i));
+                partida.setTime2(timesParaProcessar.get(i + 1));
+                partida.setFase(fase);
+                partida.setRodada(rodada);
+                partida.setStatus(StatusPartida.PENDENTE);
+                partida.setIdentificadorBracket(gerarNomeFase(numPartidas) + " " + ((i / 2) + 1));
+                partidas.add(partida);
+            }
         }
 
         return partidas;
