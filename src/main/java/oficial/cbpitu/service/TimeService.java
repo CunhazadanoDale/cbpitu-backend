@@ -22,9 +22,55 @@ public class TimeService {
     private final TimeRepository timeRepository;
     private final JogadorRepository jogadorRepository;
     private final CampeonatoRepository campeonatoRepository;
+    private final oficial.cbpitu.repository.EscalacaoRepository escalacaoRepository; // [NEW]
 
     public List<Time> listarTodos() {
         return timeRepository.findAll();
+    }
+    
+    public org.springframework.data.domain.Page<Time> listarPaginado(org.springframework.data.domain.Pageable pageable) {
+        return timeRepository.findAll(pageable);
+    }
+    
+    public List<Time> listarTop() {
+        return timeRepository.findTop4ByOrderByTrofeusDesc();
+    }
+    
+    public oficial.cbpitu.dto.TimeDetalhesDTO buscarDetalhes(Long id) {
+        Time time = buscarOuFalhar(id);
+        List<oficial.cbpitu.model.Escalacao> historico = escalacaoRepository.findByTimeId(id);
+        
+        List<oficial.cbpitu.dto.TimeDetalhesDTO.HistoricoEdicaoDTO> historicoDTO = historico.stream()
+            .sorted((e1, e2) -> {
+                int anoCompare = e2.getEdicao().getAno().compareTo(e1.getEdicao().getAno());
+                if (anoCompare != 0) return anoCompare;
+                return e2.getEdicao().getId().compareTo(e1.getEdicao().getId());
+            })
+            .map(e -> oficial.cbpitu.dto.TimeDetalhesDTO.HistoricoEdicaoDTO.builder()
+                .edicaoId(e.getEdicao().getId())
+                .nomeEdicao(e.getEdicao().getNomeCompleto())
+                .anoEdicao(e.getEdicao().getAno())
+                .capitaoNaEdicao(e.getCapitao() != null ? toJogadorResumo(e.getCapitao()) : null)
+                .jogadores(e.getJogadores().stream().map(this::toJogadorResumo).toList())
+                .build())
+            .toList();
+            
+        return oficial.cbpitu.dto.TimeDetalhesDTO.builder()
+            .id(time.getId())
+            .nomeTime(time.getNomeTime())
+            .trofeus(time.getTrofeus())
+            .capitaoAtual(time.getCapitao() != null ? toJogadorResumo(time.getCapitao()) : null)
+            .historico(historicoDTO)
+            .build();
+    }
+    
+    private oficial.cbpitu.dto.JogadorResumoDTO toJogadorResumo(Jogador jogador) {
+        return oficial.cbpitu.dto.JogadorResumoDTO.builder()
+            .id(jogador.getId())
+            .nickname(jogador.getNickname())
+            .laneLol(jogador.getLaneLol())
+            .titulos(jogador.getTitulos())
+            .build();
     }
 
     public Optional<Time> buscarPorId(Long id) {

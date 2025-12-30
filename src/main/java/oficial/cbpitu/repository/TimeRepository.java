@@ -10,4 +10,6 @@ import java.util.Optional;
 public interface TimeRepository extends JpaRepository<Time, Long> {
 
     // Optional<Time> findByCapitao(String nomeCapita);
+    
+    java.util.List<Time> findTop4ByOrderByTrofeusDesc();
 }
