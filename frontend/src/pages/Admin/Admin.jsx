@@ -171,6 +171,7 @@ function Admin() {
                     )}
                 </div>
 
+
                 {/* Edit Player Modal */}
                 {editingPlayer && (
                     <div className="modal-overlay">
